@@ -17,7 +17,10 @@ const HERO = {
   },
 };
 
-const originalDrawBars = Token.prototype.drawBars;
+Hooks.once("ready", () => {
+  console.log("DS Token Override | Initializing DS Token Override");
+
+  const originalDrawBars = Token.prototype.drawBars;
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
     if (this.actor && this.actor.type === "hero") {
@@ -25,6 +28,7 @@ const originalDrawBars = Token.prototype.drawBars;
     }
     return result;
 };
+});
 
 Hooks.on("renderTokenHUD", onHudRender);
 Hooks.on("updateActor", (doc, updateData) => {
