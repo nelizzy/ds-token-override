@@ -1,3 +1,5 @@
+const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
+
 const HERO = {
   RECOVERIES: {
     path: "recoveries.value",
@@ -17,22 +19,155 @@ const HERO = {
   },
 };
 
-Hooks.once("ready", () => {
-  console.log("DS Token Override | Initializing DS Token Override");
+Hooks.once("init", () => {
 
   const originalDrawBars = Token.prototype.drawBars;
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
+
     if (this.actor && this.actor.type === "hero") {
       renderAttributes(this);
     }
+
+    drawHealthAdds(this);
+
     return result;
-};
+  };
 });
 
+function drawHealthAdds(token) {
+  // Draw stamina ticks above bar1
+  const stamina = foundry.utils.getProperty(token.actor.system, "stamina");
+  const thresholds = [];
+  if (stamina.min < 0) thresholds.push(0);
+  thresholds.push(stamina.winded);
+
+  const ratios = thresholds.map((val) => (stamina.max - val) / (stamina.max + Math.abs(stamina.min)));
+
+  if (token.bars?.bar1) {
+    const bar = token.bars.bar1;
+    const tokenBounds = token.document.getSize();
+    const barBounds = bar.getLocalBounds();
+    const barWidth = barBounds.width;
+    const barHeight = barBounds.height;
+
+    (() => {
+      if (bar.tempStamina) {
+        const temp = bar.getChildByName(bar.tempStamina.name);
+        temp.visible = stamina.temporary > 0;
+        const fg = temp.getChildByName("fg");
+        drawTemp(fg, fg.height - 1);
+        return;
+      }
+
+      const group = new PIXI.Container();
+      group.name = "tempStamina";
+      var tempHeight = barHeight / 2;
+      const barBg = new PIXI.Graphics();
+      barBg.beginFill(PIXI.utils.string2hex("#000"), 0.5);
+      barBg.lineStyle(1, PIXI.utils.string2hex("#000"), 1);
+      barBg.drawRoundedRect(0, 0, tokenBounds.width, tempHeight, 2);
+      barBg.endFill();
+      barBg.x = 0;
+      barBg.y = 0;
+      group.addChild(barBg)
+
+
+      const barFg = new PIXI.Graphics();
+      function drawTemp(fg = barFg, height = tempHeight) {
+        fg.clear();
+        fg.beginFill(PIXI.utils.string2hex("#fff"), 0.5);
+        fg.lineStyle(1, PIXI.utils.string2hex("#000"), 1);
+        fg.drawRoundedRect(0, 0, stamina.temporary / stamina.max * tokenBounds.width, height, 2);
+        fg.endFill();
+        fg.x = 0;
+        fg.y = 0;
+        fg.name = "fg";
+      }
+      drawTemp();
+      group.addChild(barFg)
+
+      group.y = -1 * tempHeight; // above the bar
+      group.visible = stamina.temporary > 0;
+
+      bar.addChild(group);
+      bar.tempStamina = group;
+    })();
+
+    (() => {
+      if (bar.staminaTicks) {
+        return;
+      }
+
+      const tickCount = ratios.length;
+      const tickWidth = 2;
+      const tickHeight = barHeight - 3;
+      const group = new PIXI.Container();
+      group.name = "staminaTicks";
+      for (let i = 0; i < tickCount; i++) {
+        const tick = new PIXI.Graphics();
+        tick.beginFill(i === 0 ? blendColors("#000", "orange", 0.5) : blendColors("#000", "red", 0.5));
+        tick.drawRect(0, 0, tickWidth, tickHeight);
+        tick.endFill();
+        // Position ticks evenly spaced along the bar
+        const x = barWidth * ratios[i] - tickWidth / 2;
+        tick.x = x;
+        tick.y = 1; // above the bar
+        group.addChild(tick);
+      }
+      bar.addChild(group);
+      bar.staminaTicks = group;
+    })();
+
+    (() => {
+      if (token.labelled) {
+        token.getChildByName(token.labelled.name).text = getFraction(stamina);
+        return;
+      }
+
+      if (token.document.actor.type !== "hero") return;
+
+      const group = new PreciseText(
+        "",
+        PreciseText.getTextStyle({
+          fontSize: 20,
+          fill: blendColors("#ffffff", "#fff", 0.1),
+        }),
+      );
+      group.name = "labelled";
+      group.text = getFraction(stamina);
+      group.anchor.set(0.5, 0.75);
+      group.x = barWidth / 2;
+      group.y = tokenBounds.height;
+      group.zIndex = Infinity;
+      group.visible = false;
+      token.addChild(group);
+      token.labelled = group;
+    })();
+  }
+
+}
+
+function getFraction(stamina) {
+  return `${stamina.value}${stamina.temporary > 0 ? ` + ${stamina.temporary}` : ""} / ${stamina.max}`;
+}
+
+function showFraction(token, state) {
+  if (token.actor && token.actor.type === "hero") {
+    const label = token.getChildByName("labelled");
+
+
+    if (label) {
+      label.visible = token.hudOpen || state;
+    }
+  }
+}
+Hooks.on("hoverToken", showFraction);
+
 Hooks.on("renderTokenHUD", onHudRender);
+
 Hooks.on("updateActor", (doc, updateData) => {
-  // Check if updateData includes any HERO paths
+  // check if updateData includes any HERO paths
   const changedPaths = Object.keys(updateData?.system || {});
   const heroPaths = Object.values(HERO).map((stat) => stat.path);
   const shouldUpdate = heroPaths.some((path) => {
@@ -45,11 +180,29 @@ Hooks.on("updateActor", (doc, updateData) => {
 
 function onHudRender(app, html, context) {
   if ("hero" in app.document.actor.system) {
+    const token = app.document.object;
+    token.hudOpen = true;
+
+    Hooks.once("closeTokenHUD", () => {
+      token.hudOpen = false;
+      showFraction(token, false);
+    });
+
     const container = html.querySelector(".attribute.bar2");
 
-    container.style.display = "flex";
-    container.style.gap = "4px";
-    container.style.width = "calc(100% - 8px)";
+    let heroHud = container.querySelector(".hero-hud");
+    if (!heroHud) {
+      heroHud = document.createElement("div");
+      container.insertAdjacentElement("afterbegin", heroHud);
+      heroHud.classList.add("hero-hud");
+      heroHud.style.display = "flex";
+      heroHud.style.gap = "4px";
+      container.style.display = "flex";
+      container.style.gap = "8px";
+      container.style.flexWrap = "wrap";
+      container.style.height = "var(--control-size)";
+      container.style.alignContent = "end";
+    }
 
     const inputs = [];
 
@@ -90,7 +243,7 @@ function onHudRender(app, html, context) {
       inputs.push(input);
     }
 
-    container.replaceChildren(...inputs);
+    heroHud.replaceChildren(...inputs);
   }
 }
 
@@ -120,31 +273,19 @@ function changeHudInput(evt, app, oldValue) {
 }
 
 function renderAttributes(token) {
-  // Ensure flags object exists
-  if (!Object.hasOwn(window, "dsTokenOverride")) {
-    window.dsTokenOverride = {};
-  }
+  if (token.alpha < 1) return; // don't render on the ghosts you get when dragging your token
 
-  if (window.dsTokenOverride[token.document.id]) return;
-
-  if (token.alpha !== 1) return;
-
-  console.log("Rendering attributes for token:", token);
-
-  // Remove previous attribute circles if any
   const existing = token?.getChildByName?.("attribute-circles");
   if (existing) existing.destroy();
 
-  // Create a container for the circles
   const container = new PIXI.Container();
   container.name = "attribute-circles";
 
-  // Layout constants
   const circleRadius = 15;
   const gap = 4;
   const totalHeight = circleRadius * 2 * Object.keys(HERO).length + gap * (Object.keys(HERO).length - 1);
-  const startY = (token.bars._bounds.maxY - totalHeight) / 2 - 2;
-  const startX = token.bars._bounds.maxX - circleRadius; // right of token
+  const startY = (canvas.grid.size - totalHeight) / 2;
+  const startX = canvas.grid.size - circleRadius; // right of token
 
   let i = 0;
   for (const key in HERO) {
@@ -152,7 +293,6 @@ function renderAttributes(token) {
     const value = foundry.utils.getProperty(token.actor.system, stat.path);
     const y = startY + i * (circleRadius * 2 + gap) + circleRadius;
 
-    // Draw circle
     const circle = new PIXI.Graphics();
     circle.beginFill(blendColors("#000", stat.color, 0.25), 0.7);
     circle.lineStyle(1.5, PIXI.utils.string2hex(stat.color), 1);
@@ -161,9 +301,6 @@ function renderAttributes(token) {
     circle.x = startX;
     circle.y = y;
 
-    const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
-
-    // Add icon (using FontAwesome SVG)
     const icon = new PreciseText(
       "\uf004",
       PreciseText.getTextStyle({
@@ -173,7 +310,7 @@ function renderAttributes(token) {
         fill: PIXI.utils.string2hex(stat.color),
       }),
     );
-    // Use stat.icon if available
+
     if (stat.icon) {
       icon.text = getFontAwesomeUnicode(stat.icon);
     }
@@ -198,13 +335,10 @@ function renderAttributes(token) {
     i++;
   }
 
-  // Add to token's icon container
   token.addChild(container);
-
-  window.dsTokenOverride[token.document.id] = false;
 }
 
-// Helper: Map FontAwesome class to unicode (minimal, extend as needed)
+// Map FontAwesome class to unicode
 function getFontAwesomeUnicode(className) {
   const map = {
     "fa-solid fa-heart-pulse": "\uf21e",
@@ -219,6 +353,6 @@ function blendColors(color1, color2, ratio) {
   const c1 = PIXI.utils.hex2rgb(PIXI.utils.string2hex(color1));
   const c2 = PIXI.utils.hex2rgb(PIXI.utils.string2hex(color2));
   const blended = c1.map((v, i) => (1 - ratio) * v + ratio * c2[i]);
-  // Convert to hex
+
   return PIXI.utils.rgb2hex(blended);
 }
