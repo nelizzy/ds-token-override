@@ -162,6 +162,7 @@ function showFraction(token, state) {
     }
   }
 }
+
 Hooks.on("hoverToken", showFraction);
 
 Hooks.on("renderTokenHUD", onHudRender);
@@ -179,8 +180,51 @@ Hooks.on("updateActor", (doc, updateData) => {
 });
 
 function onHudRender(app, html, context) {
+  const token = app.document.object;
+
+  ( () => {
+    const stats = foundry.utils.getProperty(token.actor.system, "characteristics");
+    if (!stats) return;
+
+    const container = html.querySelector(".col.right");
+    let testHud = container.querySelector(".col.right.test-hud");
+
+    if (!testHud) {
+      testHud = document.createElement("div");
+      container.insertAdjacentElement("beforeend", testHud);
+
+      testHud.classList.add("col", "right", "test-hud");
+      testHud.style= `
+      position: absolute;
+      right: -8px;
+      transform: translateX(100%);
+      z-index: -1;
+      `
+    }
+
+    const buttons = [];
+
+    for (const key in stats) {
+      const stat = stats[key];
+      const val = stat.value;
+      const button = document.createElement("button");
+      button.classList.add("control-icon");
+      button.style = `font-size: var(--font-size-16);`
+      button.textContent = `${key[0].toUpperCase()}${val}`;
+
+      button.dataset.tooltip = `${key} (${val})`.capitalize();
+
+      button.addEventListener("click", (evt) => {
+        token.actor.rollCharacteristic(key);
+      });
+      buttons.push(button);
+    }
+
+    testHud.replaceChildren(...buttons);
+  } )();
+
+
   if ("hero" in app.document.actor.system) {
-    const token = app.document.object;
     token.hudOpen = true;
 
     Hooks.once("closeTokenHUD", () => {
