@@ -39,7 +39,7 @@ const settings = {
 
   showCharacteristics: {
     name: "Rollable Characteristics",
-    hint: "Adds row of Rollable Characteristics to Token HUD. Token HUD must be closed and reopened to see change.",
+    hint: "Adds column of Rollable Characteristics to Token HUD. Token HUD must be closed and reopened to see change.",
     type: Boolean,
     scope: "user",
     onChange: (value) => {
