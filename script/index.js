@@ -1,3 +1,5 @@
+import { initializeSettings } from "./config.js";
+
 const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
 
 const HERO = {
@@ -19,7 +21,16 @@ const HERO = {
   },
 };
 
+const uiScale = (() => {
+  const set = (gridSize) => gridSize / 140;
+
+  const get = () => set(canvas.grid.size);
+
+  return { set, get };
+})();
+
 Hooks.once("init", () => {
+  initializeSettings();
 
   const originalDrawBars = Token.prototype.drawBars;
   Token.prototype.drawBars = async function (...args) {
@@ -35,6 +46,12 @@ Hooks.once("init", () => {
   };
 });
 
+export function reRender() {
+  canvas.scene.tokens.forEach((token) => {
+    token.object.drawBars();
+  });
+}
+
 function drawHealthAdds(token) {
   // Draw stamina ticks above bar1
   const stamina = foundry.utils.getProperty(token.actor.system, "stamina");
@@ -46,9 +63,9 @@ function drawHealthAdds(token) {
 
   if (token.bars?.bar1) {
     const bar = token.bars.bar1;
-    const tokenBounds = token.document.getSize();
+
     const barBounds = bar.getLocalBounds();
-    const barWidth = barBounds.width;
+    const barWidth = canvas.grid.size;
     const barHeight = barBounds.height;
 
     (() => {
@@ -65,27 +82,28 @@ function drawHealthAdds(token) {
       var tempHeight = barHeight / 2;
       const barBg = new PIXI.Graphics();
       barBg.beginFill(PIXI.utils.string2hex("#000"), 0.5);
-      barBg.lineStyle(1, PIXI.utils.string2hex("#000"), 1);
-      barBg.drawRoundedRect(0, 0, tokenBounds.width, tempHeight, 2);
+      barBg.lineStyle(1 * uiScale.get(), PIXI.utils.string2hex("#000"), 1);
+      barBg.drawRoundedRect(0, 0, barWidth, tempHeight, 2 * uiScale.get());
       barBg.endFill();
       barBg.x = 0;
       barBg.y = 0;
-      group.addChild(barBg)
-
+      group.addChild(barBg);
 
       const barFg = new PIXI.Graphics();
+
       function drawTemp(fg = barFg, height = tempHeight) {
         fg.clear();
-        fg.beginFill(PIXI.utils.string2hex("#fff"), 0.5);
-        fg.lineStyle(1, PIXI.utils.string2hex("#000"), 1);
-        fg.drawRoundedRect(0, 0, stamina.temporary / stamina.max * tokenBounds.width, height, 2);
+        fg.beginFill(PIXI.utils.string2hex(game.settings.get("ds-token-override", "tempStaminaColor")), 0.95);
+        fg.lineStyle(1 * uiScale.get(), PIXI.utils.string2hex("#000"), 1);
+        fg.drawRoundedRect(0, 0, (stamina.temporary / stamina.max) * barWidth, height, 2 * uiScale.get());
         fg.endFill();
         fg.x = 0;
         fg.y = 0;
         fg.name = "fg";
       }
+
       drawTemp();
-      group.addChild(barFg)
+      group.addChild(barFg);
 
       group.y = -1 * tempHeight; // above the bar
       group.visible = stamina.temporary > 0;
@@ -100,8 +118,8 @@ function drawHealthAdds(token) {
       }
 
       const tickCount = ratios.length;
-      const tickWidth = 2;
-      const tickHeight = barHeight - 3;
+      const tickWidth = 2 * uiScale.get();
+      const tickHeight = barHeight - 2 * uiScale.get();
       const group = new PIXI.Container();
       group.name = "staminaTicks";
       for (let i = 0; i < tickCount; i++) {
@@ -110,9 +128,10 @@ function drawHealthAdds(token) {
         tick.drawRect(0, 0, tickWidth, tickHeight);
         tick.endFill();
         // Position ticks evenly spaced along the bar
+        tick.pivot.set(tickWidth / 2, tickHeight / 2);
         const x = barWidth * ratios[i] - tickWidth / 2;
         tick.x = x;
-        tick.y = 1; // above the bar
+        tick.y = barHeight / 2;
         group.addChild(tick);
       }
       bar.addChild(group);
@@ -121,31 +140,23 @@ function drawHealthAdds(token) {
 
     (() => {
       if (token.labelled) {
-        token.getChildByName(token.labelled.name).text = getFraction(stamina);
-        return;
+        token.getChildByName(token.labelled.name).destroy();
       }
 
       if (token.document.actor.type !== "hero") return;
 
-      const group = new PreciseText(
-        "",
-        PreciseText.getTextStyle({
-          fontSize: 20,
-          fill: blendColors("#ffffff", "#fff", 0.1),
-        }),
-      );
+      const group = new PreciseText("", { ...CONFIG.canvasTextStyle, fontSize: game.settings.get("ds-token-override", "healthLabelSize") * uiScale.get(), fill: blendColors("#ffffff", "#fff", 0.1) });
       group.name = "labelled";
       group.text = getFraction(stamina);
-      group.anchor.set(0.5, 0.75);
+      group.anchor.set(0.5, 0.55);
       group.x = barWidth / 2;
-      group.y = tokenBounds.height;
+      group.y = canvas.grid.size - bar.getChildByName("staminaTicks").getLocalBounds().height / 2;
       group.zIndex = Infinity;
       group.visible = false;
       token.addChild(group);
       token.labelled = group;
     })();
   }
-
 }
 
 function getFraction(stamina) {
@@ -155,7 +166,6 @@ function getFraction(stamina) {
 function showFraction(token, state) {
   if (token.actor && token.actor.type === "hero") {
     const label = token.getChildByName("labelled");
-
 
     if (label) {
       label.visible = token.hudOpen || state;
@@ -182,8 +192,9 @@ Hooks.on("updateActor", (doc, updateData) => {
 function onHudRender(app, html, context) {
   const token = app.document.object;
 
-  ( () => {
+  (() => {
     const stats = foundry.utils.getProperty(token.actor.system, "characteristics");
+    if (!game.settings.get("ds-token-override", "showCharacteristics")) return;
     if (!stats) return;
 
     const container = html.querySelector(".col.right");
@@ -194,12 +205,12 @@ function onHudRender(app, html, context) {
       container.insertAdjacentElement("beforeend", testHud);
 
       testHud.classList.add("col", "right", "test-hud");
-      testHud.style= `
+      testHud.style = `
       position: absolute;
       right: -8px;
       transform: translateX(100%);
       z-index: -1;
-      `
+      `;
     }
 
     const buttons = [];
@@ -209,7 +220,7 @@ function onHudRender(app, html, context) {
       const val = stat.value;
       const button = document.createElement("button");
       button.classList.add("control-icon");
-      button.style = `font-size: var(--font-size-16);`
+      button.style = `font-size: var(--font-size-16);`;
       button.textContent = `${key[0].toUpperCase()}${val}`;
 
       button.dataset.tooltip = `${key} (${val})`.capitalize();
@@ -221,8 +232,7 @@ function onHudRender(app, html, context) {
     }
 
     testHud.replaceChildren(...buttons);
-  } )();
-
+  })();
 
   if ("hero" in app.document.actor.system) {
     token.hudOpen = true;
@@ -322,11 +332,16 @@ function renderAttributes(token) {
   const existing = token?.getChildByName?.("attribute-circles");
   if (existing) existing.destroy();
 
+  if (!game.settings.get("ds-token-override", "showResources")) {
+    return;
+  }
+
   const container = new PIXI.Container();
   container.name = "attribute-circles";
 
-  const circleRadius = 15;
-  const gap = 4;
+  const userScale = game.settings.get("ds-token-override", "resourceLabelSize");
+  const circleRadius = userScale * uiScale.get();
+  const gap = Math.min(5, circleRadius * 0.4);
   const totalHeight = circleRadius * 2 * Object.keys(HERO).length + gap * (Object.keys(HERO).length - 1);
   const startY = (canvas.grid.size - totalHeight) / 2;
   const startX = canvas.grid.size - circleRadius; // right of token
@@ -339,38 +354,34 @@ function renderAttributes(token) {
 
     const circle = new PIXI.Graphics();
     circle.beginFill(blendColors("#000", stat.color, 0.25), 0.7);
-    circle.lineStyle(1.5, PIXI.utils.string2hex(stat.color), 1);
+    circle.lineStyle(1.5 * uiScale.get(), PIXI.utils.string2hex(stat.color), 1);
     circle.drawCircle(0, 0, circleRadius);
     circle.endFill();
     circle.x = startX;
     circle.y = y;
 
-    const icon = new PreciseText(
-      "\uf004",
-      PreciseText.getTextStyle({
-        fontFamily: "Font Awesome 6 Pro",
-        fontSize: 16,
-        fontWeight: "900",
-        fill: PIXI.utils.string2hex(stat.color),
-      }),
-    );
+    const icon = new PreciseText("\uf004", {
+      ...CONFIG.canvasTextStyle,
+      fontFamily: "Font Awesome 6 Pro",
+      fontSize: circleRadius * 1.05,
+      fontWeight: "900",
+      fill: PIXI.utils.string2hex(stat.color),
+    });
 
     if (stat.icon) {
       icon.text = getFontAwesomeUnicode(stat.icon);
     }
     icon.anchor.set(0.5, 1);
-    icon.x = -13;
+    icon.x = -1 * circleRadius;
     icon.y = 0;
     circle.addChild(icon);
 
-    const valueText = new PreciseText(
-      value,
-      PreciseText.getTextStyle({
-        fontSize: 20,
-        fill: blendColors("#ffffff", stat.color, 0.1),
-      }),
-    );
-    valueText.anchor.set(0.5, 0.5);
+    const valueText = new PreciseText(value, {
+      ...CONFIG.canvasTextStyle,
+      fontSize: circleRadius * 1.25,
+      fill: blendColors("#ffffff", stat.color, 0.1),
+    });
+    valueText.anchor.set(0.48, 0.53);
     valueText.x = 0;
     valueText.y = 0;
     circle.addChild(valueText);

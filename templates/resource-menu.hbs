@@ -1,0 +1,26 @@
+<div class="resource-config">
+  <style>
+  .resource-config { padding: 1em; }
+  .resource-group { margin-bottom: 1em; border: 1px solid #ccc; padding: 1em; }
+  .path-max { display: flex; align-items: center; gap: 0.5em; }
+  .path-max input { flex: 1; }
+  .icon-picker { display: flex; align-items: center; gap: 0.5em; margin: 0.5em 0; }
+  .icon-picker input { flex: 1; }
+</style>
+
+  {{#each resources}}
+  <div class="resource-group">
+    <h3>Resource {{index}}</h3>
+    <div class="path-max">
+      <input name="resources.{{@index}}.path" value="{{path}}" placeholder="system path" />
+      <span>/</span>
+      <input name="resources.{{@index}}.max" value="{{max}}" placeholder="max" />
+    </div>
+    <div class="icon-picker">
+      <input name="resources.{{@index}}.icon" value="{{icon}}" readonly />
+      <button type="button" data-action="pickIcon" data-index="{{@index}}">Pick Icon</button>
+    </div>
+    <input name="resources.{{@index}}.color" type="color" value="{{color}}" />
+  </div>
+  {{/each}}
+</div>
