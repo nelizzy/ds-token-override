@@ -9,7 +9,21 @@
       "name": "nelizzy"
     }
   ],
-  "system": ["draw-steel"],
+  "relationships": {
+    "systems": [
+      {
+        "id": "draw-steel",
+        "type": "system",
+        "compatibility": {
+          "verified": "0.9.2"
+        }
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "13.351",
+    "verified": "13.351"
+  },
   "url": "This is auto replaced",
   "readme": "This is auto replaced",
   "manifest": "This is auto replaced",
