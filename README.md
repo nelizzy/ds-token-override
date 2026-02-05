@@ -1,6 +1,5 @@
 # DS Token Override
-
-NOT COMPATIBLE WITH BAR BRAWL.
+NOT COMPATIBLE WITH BAR BRAWL
 
 ## Features
 - Adds a tick to stamina bar at dying & winded stages
