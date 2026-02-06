@@ -64,19 +64,30 @@ function drawHealthAdds(token) {
   if (token.bars?.bar1) {
     const bar = token.bars.bar1;
 
+    const destroy = (parent, id) => {
+      if (parent[id]) parent.getChildByName(parent[id].name).destroy();
+    };
+
     const barBounds = bar.getLocalBounds();
-    const barWidth = canvas.grid.size;
+    const barWidth = canvas.grid.size * token.document.width;
     const barHeight = barBounds.height;
 
-    (() => {
-      if (bar.tempStamina) {
-        const temp = bar.getChildByName(bar.tempStamina.name);
-        temp.visible = stamina.temporary > 0;
-        const fg = temp.getChildByName("fg");
-        drawTemp(fg, fg.height - 1);
-        return;
-      }
+    destroy(token.bars, "hpHelper");
 
+    const hpHelper = new PIXI.Container();
+    hpHelper.name = "hpHelper";
+    hpHelper.width = barWidth;
+    hpHelper.height = barHeight;
+    hpHelper.pivot.set(0, barHeight);
+    hpHelper.y = bar.transform.position.y + barHeight;
+    token.bars.addChild(hpHelper);
+    token.bars.hpHelper = hpHelper;
+
+    destroy(hpHelper, "tempStamina");
+    destroy(hpHelper, "staminaTicks");
+    destroy(token, "labelled");
+
+    (() => {
       const group = new PIXI.Container();
       group.name = "tempStamina";
       var tempHeight = barHeight / 2;
@@ -108,18 +119,14 @@ function drawHealthAdds(token) {
       group.y = -1 * tempHeight; // above the bar
       group.visible = stamina.temporary > 0;
 
-      bar.addChild(group);
-      bar.tempStamina = group;
+      hpHelper.addChild(group);
+      hpHelper.tempStamina = group;
     })();
 
     (() => {
-      if (bar.staminaTicks) {
-        return;
-      }
-
       const tickCount = ratios.length;
       const tickWidth = 2 * uiScale.get();
-      const tickHeight = barHeight - 2 * uiScale.get();
+      const tickHeight = barHeight - 2.5 * uiScale.get();
       const group = new PIXI.Container();
       group.name = "staminaTicks";
       for (let i = 0; i < tickCount; i++) {
@@ -128,21 +135,17 @@ function drawHealthAdds(token) {
         tick.drawRect(0, 0, tickWidth, tickHeight);
         tick.endFill();
         // Position ticks evenly spaced along the bar
-        tick.pivot.set(tickWidth / 2, tickHeight / 2);
+        tick.pivot.set(tickWidth / 2, tickHeight / 1.8);
         const x = barWidth * ratios[i] - tickWidth / 2;
         tick.x = x;
         tick.y = barHeight / 2;
         group.addChild(tick);
       }
-      bar.addChild(group);
-      bar.staminaTicks = group;
+      hpHelper.addChild(group);
+      hpHelper.staminaTicks = group;
     })();
 
     (() => {
-      if (token.labelled) {
-        token.getChildByName(token.labelled.name).destroy();
-      }
-
       if (token.document.actor.type !== "hero") return;
 
       const group = new PreciseText("", { ...CONFIG.canvasTextStyle, fontSize: game.settings.get("ds-token-override", "healthLabelSize") * uiScale.get(), fill: blendColors("#ffffff", "#fff", 0.1) });
@@ -150,7 +153,7 @@ function drawHealthAdds(token) {
       group.text = getFraction(stamina);
       group.anchor.set(0.5, 0.55);
       group.x = barWidth / 2;
-      group.y = canvas.grid.size - bar.getChildByName("staminaTicks").getLocalBounds().height / 2;
+      group.y = canvas.grid.size * token.document.height - hpHelper.getChildByName("staminaTicks").getLocalBounds().height / 2;
       group.zIndex = Infinity;
       group.visible = false;
       token.addChild(group);
@@ -176,6 +179,8 @@ function showFraction(token, state) {
 Hooks.on("hoverToken", showFraction);
 
 Hooks.on("renderTokenHUD", onHudRender);
+
+Hooks.on("updateToken", (token) => token.object.drawBars());
 
 Hooks.on("updateActor", (doc, updateData) => {
   // check if updateData includes any HERO paths
@@ -343,8 +348,8 @@ function renderAttributes(token) {
   const circleRadius = userScale * uiScale.get();
   const gap = Math.min(5, circleRadius * 0.4);
   const totalHeight = circleRadius * 2 * Object.keys(HERO).length + gap * (Object.keys(HERO).length - 1);
-  const startY = (canvas.grid.size - totalHeight) / 2;
-  const startX = canvas.grid.size - circleRadius; // right of token
+  const startY = (canvas.grid.size * token.document.height - totalHeight) / 2;
+  const startX = canvas.grid.size * token.document.width - circleRadius; // right of token
 
   let i = 0;
   for (const key in HERO) {
