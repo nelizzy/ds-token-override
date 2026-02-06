@@ -63,33 +63,33 @@ const settings = {
     },
   },
 
-  healthLabelHero: {
-    name: "Health Label (Heroes)",
-    type: new foundry.data.fields.StringField({
-      nullable: false,
-      required: true,
-      choices: displayModes,
-    }),
-    default: CONST.TOKEN_DISPLAY_MODES.HOVER,
-    scope: "world",
-    onChange: (value) => {
-      reRender();
-    },
-  },
+  // healthLabelHero: {
+  //   name: "Health Label (Heroes)",
+  //   type: new foundry.data.fields.StringField({
+  //     nullable: false,
+  //     required: true,
+  //     choices: displayModes,
+  //   }),
+  //   default: CONST.TOKEN_DISPLAY_MODES.HOVER,
+  //   scope: "world",
+  //   onChange: (value) => {
+  //     reRender();
+  //   },
+  // },
 
-  healthLabelNPC: {
-    name: "Health Label (NPCs)",
-    type: new foundry.data.fields.StringField({
-      nullable: false,
-      required: true,
-      choices: displayModes,
-    }),
-    default: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
-    scope: "world",
-    onChange: (value) => {
-      reRender();
-    },
-  },
+  // healthLabelNPC: {
+  //   name: "Health Label (NPCs)",
+  //   type: new foundry.data.fields.StringField({
+  //     nullable: false,
+  //     required: true,
+  //     choices: displayModes,
+  //   }),
+  //   default: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
+  //   scope: "world",
+  //   onChange: (value) => {
+  //     reRender();
+  //   },
+  // },
 
   tempStaminaColor: {
     name: "Temp Stamina Color",
