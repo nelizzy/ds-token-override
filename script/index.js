@@ -83,45 +83,8 @@ function drawHealthAdds(token) {
     token.bars.addChild(hpHelper);
     token.bars.hpHelper = hpHelper;
 
-    destroy(hpHelper, "tempStamina");
     destroy(hpHelper, "staminaTicks");
     destroy(token, "labelled");
-
-    (() => {
-      const group = new PIXI.Container();
-      group.name = "tempStamina";
-      var tempHeight = barHeight / 2;
-      const barBg = new PIXI.Graphics();
-      barBg.beginFill(PIXI.utils.string2hex("#000"), 0.5);
-      barBg.lineStyle(1 * uiScale.get(), PIXI.utils.string2hex("#000"), 1);
-      barBg.drawRoundedRect(0, 0, barWidth, tempHeight, 2 * uiScale.get());
-      barBg.endFill();
-      barBg.x = 0;
-      barBg.y = 0;
-      group.addChild(barBg);
-
-      const barFg = new PIXI.Graphics();
-
-      function drawTemp(fg = barFg, height = tempHeight) {
-        fg.clear();
-        fg.beginFill(PIXI.utils.string2hex(game.settings.get("ds-token-override", "tempStaminaColor")), 0.95);
-        fg.lineStyle(1 * uiScale.get(), PIXI.utils.string2hex("#000"), 1);
-        fg.drawRoundedRect(0, 0, (stamina.temporary / stamina.max) * barWidth, height, 2 * uiScale.get());
-        fg.endFill();
-        fg.x = 0;
-        fg.y = 0;
-        fg.name = "fg";
-      }
-
-      drawTemp();
-      group.addChild(barFg);
-
-      group.y = -1 * tempHeight; // above the bar
-      group.visible = stamina.temporary > 0;
-
-      hpHelper.addChild(group);
-      hpHelper.tempStamina = group;
-    })();
 
     (() => {
       const tickCount = ratios.length;

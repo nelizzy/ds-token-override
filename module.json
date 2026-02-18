@@ -15,7 +15,7 @@
         "id": "draw-steel",
         "type": "system",
         "compatibility": {
-          "verified": "0.9.2"
+          "minimum": "0.10.0"
         }
       }
     ]
