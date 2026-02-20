@@ -23,6 +23,26 @@ const settings = {
     },
   },
 
+  groupColor: {
+    name: "Extra Combat Tracker Details",
+    hint: "Adds group colors and minion count to combat tracker.",
+    type: Boolean,
+    scope: "world",
+    default: false,
+    onChange: (value) => {
+      ui.combat.render();
+    },
+  },
+
+  groupHover: {
+    name: "Hover Group Members",
+    hint: "Highlights Group members when hovering group.",
+    type: Boolean,
+    scope: "world",
+    default: false,
+    requiresReload: true,
+  },
+
   resourceLabelSize: {
     name: "Resource Label Size",
     type: Number,
@@ -91,15 +111,15 @@ const settings = {
   //   },
   // },
 
-  tempStaminaColor: {
-    name: "Temp Stamina Color",
-    type: new foundry.data.fields.ColorField(),
-    default: "#5ac1e0",
-    scope: "user",
-    onChange: (value) => {
-      reRender();
-    },
-  },
+  // tempStaminaColor: {
+  //   name: "Temp Stamina Color",
+  //   type: new foundry.data.fields.ColorField(),
+  //   default: "#5ac1e0",
+  //   scope: "user",
+  //   onChange: (value) => {
+  //     reRender();
+  //   },
+  // },
 };
 
 const resourceDefaults = [

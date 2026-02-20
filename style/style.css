@@ -1,0 +1,4 @@
+  .combat-sidebar .combat-tracker .combatant-group .group-header .token-image {
+    outline: 3px solid color-mix(in lab, var(--group-color, transparent), transparent 20%) !important;
+    outline-offset: -3px;
+  }

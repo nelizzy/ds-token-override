@@ -1,4 +1,5 @@
 import { initializeSettings } from "./config.js";
+import { combatTrackerMod } from "./combatTrackerMod.js";
 
 const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
 
@@ -32,6 +33,8 @@ const uiScale = (() => {
 Hooks.once("init", () => {
   initializeSettings();
 
+  combatTrackerMod();
+
   const originalDrawBars = Token.prototype.drawBars;
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
@@ -54,12 +57,31 @@ export function reRender() {
 
 function drawHealthAdds(token) {
   // Draw stamina ticks above bar1
-  const stamina = foundry.utils.getProperty(token.actor.system, "stamina");
   const thresholds = [];
-  if (stamina.min < 0) thresholds.push(0);
-  thresholds.push(stamina.winded);
-
-  const ratios = thresholds.map((val) => (stamina.max - val) / (stamina.max + Math.abs(stamina.min)));
+  let ratios = [];
+  // get the thresholds to draw
+  if (token.actor.system?.hero) {
+    // heros
+    const stamina = token.actor.system.stamina;
+    thresholds.push(0);
+    thresholds.push(stamina.winded);
+    ratios = thresholds.map((val) => (stamina.max - val) / (stamina.max + Math.abs(stamina.min)));
+  } else if (token.actor.system?.isMinion) {
+    // minion npc
+    const minionGroup = token.actor.system?.combatGroup?.system;
+    if (!minionGroup) return;
+    const minionStamina = token.actor.system.stamina.max;
+    const maxStamina = minionGroup.staminaMax;
+    for (let i = 1; i < minionGroup.minions.size; i++) {
+      thresholds.push(minionStamina * i);
+    }
+    ratios = thresholds.map((val) => (maxStamina - val) / maxStamina);
+  } else {
+    // non-minion npc
+    const stamina = token.actor.system.stamina;
+    thresholds.push(stamina.winded);
+    ratios = thresholds.map((val) => (stamina.max - val) / stamina.max);
+  }
 
   if (token.bars?.bar1) {
     const bar = token.bars.bar1;
@@ -94,7 +116,7 @@ function drawHealthAdds(token) {
       group.name = "staminaTicks";
       for (let i = 0; i < tickCount; i++) {
         const tick = new PIXI.Graphics();
-        tick.beginFill(i === 0 ? blendColors("#000", "orange", 0.5) : blendColors("#000", "red", 0.5));
+        tick.beginFill(blendColors("#000", "#000", 1));
         tick.drawRect(0, 0, tickWidth, tickHeight);
         tick.endFill();
         // Position ticks evenly spaced along the bar
@@ -110,6 +132,8 @@ function drawHealthAdds(token) {
 
     (() => {
       if (token.document.actor.type !== "hero") return;
+
+      const stamina = token.actor.system.stamina;
 
       const group = new PreciseText("", { ...CONFIG.canvasTextStyle, fontSize: game.settings.get("ds-token-override", "healthLabelSize") * uiScale.get(), fill: blendColors("#ffffff", "#fff", 0.1) });
       group.name = "labelled";
@@ -188,7 +212,7 @@ function onHudRender(app, html, context) {
       const val = stat.value;
       const button = document.createElement("button");
       button.classList.add("control-icon");
-      button.style = `font-size: var(--font-size-16);`;
+      button.style = `font-size: var(--font-size-16); white-space: nowrap;`;
       button.textContent = `${key[0].toUpperCase()}${val}`;
 
       button.dataset.tooltip = `${key} (${val})`.capitalize();

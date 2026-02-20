@@ -4,6 +4,7 @@
   "description": "Overrides some basic token options for more intuitive gameplay; heavily alpha",
   "version": "This is auto replaced",
   "esmodules": ["script/index.js"],
+  "styles": ["style/style.css"],
   "authors": [
     {
       "name": "nelizzy"
