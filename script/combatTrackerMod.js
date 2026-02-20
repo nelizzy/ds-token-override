@@ -53,16 +53,20 @@ export function combatTrackerMod() {
         const color = group.getFlag("ds-token-override", "groupColor");
         const el = html.querySelector(`[data-group-id="${group.id}"]`);
         el.style.setProperty("--group-color", color);
-        const wrapper = document.createElement("div");
+
         const staminaEl = el.querySelector(".squad-stamina");
-        staminaEl.parentElement.appendChild(wrapper);
-        staminaEl.insertAdjacentText("beforeend", ` stamina`);
-        wrapper.appendChild(staminaEl);
-        wrapper.style = `font-size: 0.95em`;
-        const maxMinions = group.system.minions.size;
-        const minionThreshold = group.system.staminaMax / maxMinions;
-        const remainMinions = Math.ceil((group.system.staminaValue / group.system.staminaMax) * minionThreshold);
-        wrapper.insertAdjacentText("beforeend", `${remainMinions} / ${maxMinions} minions`);
+
+        if (staminaEl) {
+          const wrapper = document.createElement("div");
+          staminaEl.parentElement.appendChild(wrapper);
+          staminaEl.insertAdjacentText("beforeend", ` stamina`);
+          wrapper.appendChild(staminaEl);
+          wrapper.style = `font-size: 0.95em`;
+          const maxMinions = group.system.minions.size;
+          const minionThreshold = group.system.staminaMax / maxMinions;
+          const remainMinions = Math.ceil((group.system.staminaValue / group.system.staminaMax) * minionThreshold);
+          wrapper.insertAdjacentText("beforeend", `${remainMinions} / ${maxMinions} minions`);
+        }
       });
     }
 
