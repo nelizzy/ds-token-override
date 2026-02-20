@@ -64,7 +64,7 @@ export function combatTrackerMod() {
           wrapper.style = `font-size: 0.95em`;
           const maxMinions = group.system.minions.size;
           const minionThreshold = group.system.staminaMax / maxMinions;
-          const remainMinions = Math.ceil((group.system.staminaValue / group.system.staminaMax) * minionThreshold);
+          const remainMinions = Math.min(Math.ceil(group.system.staminaValue / minionThreshold), maxMinions);
           wrapper.insertAdjacentText("beforeend", `${remainMinions} / ${maxMinions} minions`);
         }
       });
