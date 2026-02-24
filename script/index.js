@@ -1,5 +1,6 @@
 import { initializeSettings } from "./config.js";
 import { combatTrackerMod } from "./combatTrackerMod.js";
+import { chat } from "./chatCommands.js";
 
 const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
 
@@ -31,6 +32,10 @@ const uiScale = (() => {
 })();
 
 Hooks.once("init", () => {
+  game.getMsgRoll = (id) => {
+    return game.messages.get(id).system.parts.sortedContents[0].rolls[0];
+  };
+
   initializeSettings();
 
   combatTrackerMod();
@@ -48,6 +53,8 @@ Hooks.once("init", () => {
     return result;
   };
 });
+
+chat();
 
 export function reRender() {
   canvas.scene.tokens.forEach((token) => {
