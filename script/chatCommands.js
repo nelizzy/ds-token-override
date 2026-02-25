@@ -106,7 +106,5 @@ export function chat() {
       });
       el.appendChild(footer);
     }
-
-    addButtons = false;
   });
 }
