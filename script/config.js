@@ -34,15 +34,6 @@ const settings = {
     },
   },
 
-  groupHover: {
-    name: "Hover Group Members",
-    hint: "Highlights Group members when hovering group.",
-    type: Boolean,
-    scope: "world",
-    default: false,
-    requiresReload: true,
-  },
-
   resourceLabelSize: {
     name: "Resource Label Size",
     type: Number,

@@ -1,6 +1,4 @@
 export function combatTrackerMod() {
-  const highlighted = new Set();
-
   const updateTokens = CONFIG.CombatantGroup.documentClass.prototype.updateTokens;
   CONFIG.CombatantGroup.documentClass.prototype.updateTokens = async function (...args) {
     updateTokens.apply(this, args);
@@ -9,38 +7,6 @@ export function combatTrackerMod() {
     await this.setFlag("ds-token-override", "groupColor", args[1]);
 
     ui.combat.render();
-  };
-
-  const hoverIn = (evt) => {
-    if (evt.target.closest(".combatant[data-combatant-id]")) return;
-
-    const { groupId } = evt.target.closest(`[data-group-id]`)?.dataset ?? {};
-
-    if (!groupId) return;
-
-    const grp = game.combat?.groups?.get(groupId);
-
-    if (!grp) return;
-
-    grp.members.forEach((el) => {
-      const { tokenId } = el ?? {};
-      if (!tokenId) return;
-      const token = canvas.tokens.get(tokenId);
-      token?._onHoverIn(evt);
-      highlighted.add(token);
-    });
-  };
-
-  const hoverOut = (evt) => {
-    if (evt.target.closest(".combatant[data-combatant-id]")) return;
-    highlighted.forEach((el) => {
-      const { id } = el ?? {};
-      if (!id) return;
-      const token = canvas.tokens.get(id);
-      token?._onHoverOut(evt);
-    });
-
-    highlighted.clear();
   };
 
   const renderTracker = (app, html, data) => {
@@ -68,12 +34,6 @@ export function combatTrackerMod() {
           wrapper.insertAdjacentText("beforeend", `${remainMinions} / ${maxMinions} minions`);
         }
       });
-    }
-
-    const shouldHover = game.settings.get("ds-token-override", "groupHover");
-    if (shouldHover) {
-      html.addEventListener("pointerover", hoverIn);
-      html.addEventListener("pointerout", hoverOut);
     }
   };
 
