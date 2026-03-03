@@ -1,5 +1,5 @@
 export function combatTrackerMod() {
-  const highlighted = [];
+  const highlighted = new Set();
 
   const updateTokens = CONFIG.CombatantGroup.documentClass.prototype.updateTokens;
   CONFIG.CombatantGroup.documentClass.prototype.updateTokens = async function (...args) {
@@ -27,7 +27,7 @@ export function combatTrackerMod() {
       if (!tokenId) return;
       const token = canvas.tokens.get(tokenId);
       token?._onHoverIn(evt);
-      highlighted.push(token);
+      highlighted.add(token);
     });
   };
 
@@ -40,7 +40,7 @@ export function combatTrackerMod() {
       token?._onHoverOut(evt);
     });
 
-    highlighted.length = 0;
+    highlighted.clear();
   };
 
   const renderTracker = (app, html, data) => {

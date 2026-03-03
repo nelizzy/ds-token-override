@@ -23,6 +23,19 @@ const HERO = {
   },
 };
 
+const NPC = {
+  SPEED: {
+    path: "movement.value",
+    icon: "fa-solid fa-boot",
+    color: "#74c578ff",
+  },
+  STABILITY: {
+    path: "combat.stability",
+    icon: "fa-solid fa-anchor",
+    color: "#e28c53ff",
+  },
+};
+
 const uiScale = (() => {
   const set = (gridSize) => gridSize / 140;
 
@@ -44,8 +57,11 @@ Hooks.once("init", () => {
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
 
-    if (this.actor && this.actor.type === "hero") {
-      renderAttributes(this);
+    if (this?.actor.type === "hero") {
+      renderAttributes(this, HERO);
+    }
+    if (this?.actor.type === "npc" && game.user.isGM) {
+      renderAttributes(this, NPC);
     }
 
     drawHealthAdds(this);
@@ -325,7 +341,7 @@ function changeHudInput(evt, app, oldValue) {
   app.document.actor.update({ ["system." + evt.target.name]: newValue });
 }
 
-function renderAttributes(token) {
+function renderAttributes(token, attributes) {
   if (token.alpha < 1) return; // don't render on the ghosts you get when dragging your token
 
   const existing = token?.getChildByName?.("attribute-circles");
@@ -341,13 +357,13 @@ function renderAttributes(token) {
   const userScale = game.settings.get("ds-token-override", "resourceLabelSize");
   const circleRadius = userScale * uiScale.get();
   const gap = Math.min(5, circleRadius * 0.4);
-  const totalHeight = circleRadius * 2 * Object.keys(HERO).length + gap * (Object.keys(HERO).length - 1);
+  const totalHeight = circleRadius * 2 * Object.keys(attributes).length + gap * (Object.keys(attributes).length - 1);
   const startY = (canvas.grid.size * token.document.height - totalHeight) / 2;
   const startX = canvas.grid.size * token.document.width - circleRadius; // right of token
 
   let i = 0;
-  for (const key in HERO) {
-    const stat = HERO[key];
+  for (const key in attributes) {
+    const stat = attributes[key];
     const value = foundry.utils.getProperty(token.actor.system, stat.path);
     const y = startY + i * (circleRadius * 2 + gap) + circleRadius;
 
@@ -398,6 +414,8 @@ function getFontAwesomeUnicode(className) {
     "fa-solid fa-heart-pulse": "\uf21e",
     "fa-solid fa-chevrons-up": "\uf325",
     "fa-solid fa-sparkles": "\uf890",
+    "fa-solid fa-boot": "\uf782",
+    "fa-solid fa-anchor": "\uf13d",
   };
   return map[className] || "\uf128"; // fallback: question mark
 }

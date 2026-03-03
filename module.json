@@ -2,7 +2,7 @@
   "id": "ds-token-override",
   "title": "Draw Steel: Token Override",
   "description": "Overrides some basic token options for more intuitive gameplay; heavily alpha",
-  "version": "This is auto replaced",
+  "version": "XYZ",
   "esmodules": ["script/index.js"],
   "styles": ["style/style.css"],
   "authors": [

@@ -3,7 +3,7 @@ export function chat() {
     if (data.type === "base" && data.isRoll) {
       const roll = data.rolls[0];
 
-      if (roll.constructor.name !== "DSRoll") return;
+      if (roll.constructor.name !== "DSRoll" || data.flavor === "Start of turn resource gain") return;
 
       const footer = document.createElement("footer");
       footer.style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(5ch, 1fr)); gap: 0.5ch; margin-top: 0.2ch; order: 100;";
@@ -16,7 +16,7 @@ export function chat() {
         {
           // label: `dmg<br>${type}`,
           label: `dmg`,
-          tooltip: `Shift+Click: Halve Damage`,
+          tooltip: `Shift+Click: Halve Damage<br>Ctrl+Click: Cap Damage to Max HP`,
           onClick: (evt) => {
             let types = [];
             if (type) types.push(type);
@@ -31,12 +31,12 @@ export function chat() {
               },
             );
 
-            dsRoll.evaluate().then((r) => r.applyDamage(null, { halfDamage: evt.shiftKey }));
+            dsRoll.evaluate().then((r) => r.applyDamage(null, { halfDamage: evt.shiftKey, cappedDamage: evt.ctrlKey }));
           },
         },
         {
           label: "heal",
-          tooltip: `Shift+Click: Halve Healing`,
+          tooltip: `Shift+Click: Halve Healing<br>Ctrl+Click: Cap Healing to Max HP`,
           onClick: (evt) => {
             const dsRoll = new ds.rolls.DamageRoll(
               roll.result,
@@ -49,7 +49,7 @@ export function chat() {
                 flavor: "Stamina",
               },
             );
-            dsRoll.evaluate().then((r) => r.applyDamage(null, { halfDamage: evt.shiftKey }));
+            dsRoll.evaluate().then((r) => r.applyDamage(null, { halfDamage: evt.shiftKey, cappedDamage: evt.ctrlKey }));
           },
         },
         {
