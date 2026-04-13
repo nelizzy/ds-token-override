@@ -377,7 +377,7 @@ function renderAttributes(token, attributes) {
 
     const icon = new PreciseText("\uf004", {
       ...CONFIG.canvasTextStyle,
-      fontFamily: "Font Awesome 6 Pro",
+      fontFamily: ["Font Awesome 7 Pro", "Font Awesome 6 Pro"],
       fontSize: circleRadius * 1.05,
       fontWeight: "900",
       fill: PIXI.utils.string2hex(stat.color),
