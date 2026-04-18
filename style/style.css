@@ -1,4 +1,34 @@
-  .combat-sidebar .combat-tracker .combatant-group .group-header .token-image {
-    outline: 3px solid color-mix(in lab, var(--group-color, transparent), transparent 20%) !important;
-    outline-offset: -3px;
+.combat-sidebar .combat-tracker .combatant-group .group-header .token-image {
+  outline: 3px solid color-mix(in lab, var(--group-color, transparent), transparent 20%) !important;
+  outline-offset: -3px;
+}
+
+:where(.dsp-improved-chat .chat-message) {
+  button {
+    color: var(--dsp-text);
   }
+}
+
+.ds-override-undo {
+  --input-height: 1em;
+  --button-size: 0;
+  font-size: 0.7em;
+  box-sizing: content-box;
+  padding-block: 0.5em 0.6em;
+  float: right;
+  margin-inline-start: 0.1em;
+
+  &[disabled] {
+    opacity: 0.5;
+  }
+}
+
+.damage-log:has(.ds-override-undo[disabled]), .damage-log.disabled {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.small {
+  font-size: 0.8em;
+  margin: 0;
+}

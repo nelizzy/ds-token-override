@@ -14,7 +14,7 @@ const displayModes = {
 const settings = {
   showResources: {
     name: "Show Resources",
-    hint: "Toggle the circular resource display on Hero tokens.",
+    hint: "Toggle the circular resource display on tokens.",
     type: Boolean,
     scope: "user",
     default: true,
@@ -73,6 +73,15 @@ const settings = {
       reRender();
     },
   },
+
+  showDamageLog: {
+    name: "Show Damage Log",
+    hint: "Sends a message when token health changes, along with undo button for token owner.",
+    type: Boolean,
+    scope: "world",
+    default: false,
+    requiresReload: true
+  }
 
   // healthLabelHero: {
   //   name: "Health Label (Heroes)",

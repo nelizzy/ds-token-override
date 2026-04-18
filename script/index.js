@@ -68,6 +68,14 @@ Hooks.once("init", () => {
 
     return result;
   };
+
+  game.socket.on("module.ds-token-override", async ({ action, messageId }) => {
+  if (action !== "setUndone") return;
+  if (!game.user.isGM) return;
+
+  const message = await game.messages.get(messageId);
+  await message.setFlag("ds-token-override", "undone", true);
+});
 });
 
 chat();
