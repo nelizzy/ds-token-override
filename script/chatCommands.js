@@ -139,6 +139,8 @@ export function chat() {
     const staminaPost = updateData.system.staminaValue;
     const staminaPre = staminaPost - delta;
 
+    if (delta === 0) return;
+
     // figure out stamina thresholds
     const minions = await group.system.minions;
 
@@ -171,8 +173,6 @@ export function chat() {
     // return;
     if (newData.system?.stamina === undefined) return;
 
-    console.log(newData, updateData);
-
     const tokenId = updateData.parent?.id;
     const actorId = actor.id;
 
@@ -187,6 +187,8 @@ export function chat() {
     const delta = tempPost + staminaPost - (tempPre + staminaPre);
     const tempDelta = tempPost - tempPre;
     const staminaDelta = staminaPost - staminaPre;
+
+    if (delta === 0) return;
 
     const undoBtn = `<button data-action="undoDamage" class="ds-override-undo owner-only"><i class="fa-solid fa-rotate-left"></i></button>`;
 

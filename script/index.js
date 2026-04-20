@@ -80,15 +80,7 @@ Hooks.once("init", () => {
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
 
-    if ( (["hero", "retainer"].includes(this?.actor.type)) ) {
-      renderAttributes(this, HERO);
-    }
-    if ( (["retainer"].includes(this?.actor.type)) ) {
-      renderAttributes(this, RETAINER);
-    }
-    if (this?.actor.type === "npc" && game.user.isGM) {
-      renderAttributes(this, NPC);
-    }
+    assignAttributes(this);
 
     drawHealthAdds(this);
 
@@ -96,12 +88,12 @@ Hooks.once("init", () => {
   };
 
   game.socket.on("module.ds-token-override", async ({ action, messageId }) => {
-  if (action !== "setUndone") return;
-  if (!game.user.isGM) return;
+    if (action !== "setUndone") return;
+    if (!game.user.isGM) return;
 
-  const message = await game.messages.get(messageId);
-  await message.setFlag("ds-token-override", "undone", true);
-});
+    const message = await game.messages.get(messageId);
+    await message.setFlag("ds-token-override", "undone", true);
+  });
 });
 
 chat();
@@ -188,7 +180,7 @@ function drawHealthAdds(token) {
     })();
 
     (() => {
-      if (!(["hero", "retainer"].includes(token.document.actor.type))) return;
+      if (!["hero", "retainer"].includes(token.document.actor.type)) return;
 
       const stamina = token.actor.system.stamina;
 
@@ -211,7 +203,7 @@ function getFraction(stamina) {
 }
 
 function showFraction(token, state) {
-  if (token.actor && (["hero", "retainer"].includes(token.actor.type))) {
+  if (token.actor && ["hero", "retainer"].includes(token.actor.type)) {
     const label = token.getChildByName("labelled");
 
     if (label) {
@@ -226,16 +218,21 @@ Hooks.on("renderTokenHUD", onHudRender);
 
 Hooks.on("updateToken", (token) => token.object.drawBars());
 
-Hooks.on("updateActor", (doc, updateData) => {
-  // check if updateData includes any HERO paths
+Hooks.on("updateActor", (actor, updateData, opts) => {
+  // check if updateData includes any paths
   const changedPaths = Object.keys(updateData?.system || {});
-  const heroPaths = Object.values(HERO).map((stat) => stat.path);
-  const shouldUpdate = heroPaths.some((path) => {
-    // path like "hero.primary.value" => ["hero", "primary", "value"]
+  const checkedPaths = Object.values({...HERO, ...NPC, ...RETAINER}).map((stat) => stat.path);
+  const shouldUpdate = checkedPaths.some((path) => {
     const [first] = path.split(".");
     return changedPaths.includes(first);
   });
   if (!shouldUpdate) return;
+
+  canvas.tokens.placeables.forEach((token) => {
+    if (token.actor?.id === actor.id) {
+      token.drawBars();
+    }
+  });
 });
 
 function onHudRender(app, html, context) {
@@ -373,6 +370,20 @@ function changeHudInput(evt, app, oldValue) {
 
   evt.target.value = isNaN(newValue) ? oldValue : newValue;
   app.document.actor.update({ ["system." + evt.target.name]: newValue });
+}
+
+function assignAttributes(x) {
+  switch (x?.actor?.type) {
+    case "hero":
+      renderAttributes(x, HERO);
+      break;
+    case "retainer":
+      renderAttributes(x, RETAINER);
+      break;
+    case "npc":
+      renderAttributes(x, NPC);
+      break;
+  }
 }
 
 function renderAttributes(token, attributes) {
