@@ -127,51 +127,95 @@ export function chat() {
     }
   });
 
+  Hooks.on("updateCombatantGroup", async (group, updateData, options, userId) => {
+    if (!game.settings.get("ds-token-override", "showDamageLog")) return;
+    if (group.system.combat.round === 0 && updateData.system.staminaValue === group.system.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value
+    if (options.isUndo) return;
+    if (options.ds?.staminaDiff === undefined) return;
+
+    const undoBtn = `<button data-action="undoDamage" class="ds-override-undo owner-only"><i class="fa-solid fa-rotate-left"></i></button>`;
+
+    const delta = options.ds.staminaDiff * -1;
+    const staminaPost = updateData.system.staminaValue;
+    const staminaPre = staminaPost - delta;
+
+    // figure out stamina thresholds
+    const minions = await group.system.minions;
+
+    const minionThreshold = [...minions].reduce((acc, minion, idx) => idx === 0 ? minion.actor.system.stamina.max : acc === minion.actor.system.stamina.max ? acc : 0, 0);
+
+    const minionsPost = minionThreshold ? Math.min(Math.ceil(staminaPost / minionThreshold), minions.size) : 0;
+    const minionsPre = minionThreshold ? Math.min(Math.ceil(staminaPre / minionThreshold), minions.size) : 0;
+    const minionsDelta = minionsPost - minionsPre;
+
+
+    const x = await ChatMessage.create({
+      author: game.users.get(userId),
+      speaker: ChatMessage.getSpeaker({ combatant: group }),
+      content: `<span class="damage-log">${undoBtn} ${group.name} ${delta < 0 ? `took` : `healed`} ${(group.hasPlayerOwner || game.user.isGM) ? "<b>" : ""}<span class="${group.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${(group.hasPlayerOwner || game.user.isGM) ? "</b>" : ""}
+        <span class="small ${group.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre} -> ${staminaPost}) ${minionsDelta !== 0 ? `This&nbsp;${minionsDelta < 0 ? `kills` : `restores`} ${Math.abs(minionsDelta)} minion${Math.abs(minionsDelta) > 1 ? 's' : ''}.` : ``}</span></span>
+        `,
+    });
+
+    x.setFlag("ds-token-override", "undoData", {
+      groupId: group.id,
+      staminaDelta: delta,
+    });
+  });
+
+  Hooks.on("updateActor", async (actor, newData, updateData, userId) => {
+    if (!game.settings.get("ds-token-override", "showDamageLog")) return;
+
+    if (updateData.isUndo) return;
+
+    // return;
+    if (newData.system?.stamina === undefined) return;
+
+    console.log(newData, updateData);
+
+    const tokenId = updateData.parent?.id;
+    const actorId = actor.id;
+
+    const postData = newData.system.stamina;
+    const preData = updateData.ds.previousStamina;
+
+    const tempPost = postData?.temporary ?? 0;
+    const tempPre = preData?.temporary ?? 0;
+    const staminaPost = postData?.value ?? 0;
+    const staminaPre = preData?.value ?? 0;
+
+    const delta = tempPost + staminaPost - (tempPre + staminaPre);
+    const tempDelta = tempPost - tempPre;
+    const staminaDelta = staminaPost - staminaPre;
+
+    const undoBtn = `<button data-action="undoDamage" class="ds-override-undo owner-only"><i class="fa-solid fa-rotate-left"></i></button>`;
+
+    const x = await ChatMessage.create({
+      author: game.users.get(userId),
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<span class="damage-log">${undoBtn} ${actor.name} ${delta < 0 ? `took` : `healed`} ${(actor.hasPlayerOwner || game.user.isGM) ? "<b>" : ""}<span class="${actor.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${(actor.hasPlayerOwner || game.user.isGM) ? "</b>" : ""}
+        <span class="small ${actor.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre}${tempPre > 0 ? ` [${tempPre}]` : ``} -> ${staminaPost}${tempPost > 0 ? ` [${tempPost}]` : ``})</span></span>
+        `,
+    });
+
+    x.setFlag("ds-token-override", "undoData", {
+      tokenId,
+      actorId,
+      tempDelta,
+      staminaDelta,
+    });
+  });
+
   const ogApplyDamage = ds.rolls.DamageRoll.prototype.applyDamage;
   ds.rolls.DamageRoll.prototype.applyDamage = async function (...args) {
     if (canvas.tokens.controlled.length) {
-
-    Hooks.once("updateActor", async (actor, newData, updateData, userId) => {
-      if (!game.settings.get("ds-token-override", "showDamageLog")) return;
-      if (newData.system?.stamina === undefined) return;
-
-      const tokenId = updateData.parent?.id;
-      const actorId = actor.id;
-
-      const postData = newData.system.stamina;
-      const preData = updateData.ds.previousStamina;
-
-      const tempPost = postData?.temporary ?? 0;
-      const tempPre = preData?.temporary ?? 0;
-      const staminaPost = postData?.value ?? 0;
-      const staminaPre = preData?.value ?? 0;
-
-      const delta = (tempPost + staminaPost) - (tempPre + staminaPre);
-      const tempDelta = tempPost - tempPre;
-      const staminaDelta = staminaPost - staminaPre;
-
-      const undoBtn = `<button data-action="undoDamage" class="ds-override-undo owner-only"><i class="fa-solid fa-rotate-left"></i></button>`;
-
-      const x = await ChatMessage.create({
-        author: game.users.get(userId),
-        speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<span class="damage-log">${undoBtn} ${actor.name} ${delta < 0 ? `took` : `healed`} <span class="${actor.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage
-        <span class="small ${actor.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre}${tempPre > 0 ? ` [${tempPre}]` : ``} -> ${staminaPost}${tempPost > 0 ? ` [${tempPost}]` : ``})</span></span>
-        `,
-      });
-
-      x.setFlag("ds-token-override", "undoData", {
-        tokenId, actorId, tempDelta, staminaDelta
-      });
-    });
-
-  }
+    }
 
     await ogApplyDamage.apply(this, args);
   };
 
   // Handle undo damage button
-  ( () => {
+  (() => {
     document.body.addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-action='undoDamage']");
       if (!btn || btn.disabled) return;
@@ -180,36 +224,51 @@ export function chat() {
       const message = await game.messages.get(messageId);
 
       undoDmg(message);
-    })
-  } )();
+    });
+  })();
 }
 
 async function undoDmg(message) {
   const undoData = message.getFlag("ds-token-override", "undoData");
   if (!undoData) return;
-  const { tokenId, actorId, staminaDelta, tempDelta } = undoData;
 
-  let actor;
+  // combatant group version
+  if (undoData.groupId) {
+    const group = await game.combat.groups.get(undoData.groupId);
+    const delta = undoData.staminaDelta;
 
-  if (tokenId) {
-    const token = await game.scenes.current.tokens.get(tokenId);
-    actor = token.actor;
-  } else {
-    actor = await game.actors.get(actorId);
+    const newVal = group.system.staminaValue - delta;
+
+    const r = await group.update({["system.staminaValue"]: newVal}, { isUndo: true });
   }
 
-  const {value: oldStamina = 0, min = 0, max = 0, temporary = 0} = actor.system.stamina;
-  const newVal = Math.min(Math.max(oldStamina - staminaDelta, min), max);
-  const newTemp = Math.max(temporary - tempDelta, 0);
+  if (undoData.tokenId || undoData.actorId) {
+    // actor/npc version
+    const { tokenId, actorId, staminaDelta, tempDelta } = undoData;
 
-  const updateData = {};
+    let actor;
 
-  if (newVal !== oldStamina) updateData["system.stamina.value"] = newVal;
-  if (newTemp !== temporary) updateData["system.stamina.temporary"] = newTemp;
+    if (tokenId) {
+      const token = await game.scenes.current.tokens.get(tokenId);
+      actor = token.actor;
+    } else {
+      actor = await game.actors.get(actorId);
+    }
 
-  const r = await actor.update(updateData);
+    const { value: oldStamina = 0, min = 0, max = 0, temporary = 0 } = actor.system.stamina;
+    const newVal = Math.min(Math.max(oldStamina - staminaDelta, min), max);
+    const newTemp = Math.max(temporary - tempDelta, 0);
 
-   if (game.user.isGM) {
+    const updateData = {};
+
+    if (newVal !== oldStamina) updateData["system.stamina.value"] = newVal;
+    if (newTemp !== temporary) updateData["system.stamina.temporary"] = newTemp;
+
+    // await actor.setFlag("ds-token-override", "pendingUndo", true);
+    const r = await actor.update(updateData, { isUndo: true });
+  }
+
+  if (game.user.isGM) {
     // GM can do it directly
     await message.setFlag("ds-token-override", "undone", true);
   } else {

@@ -34,6 +34,29 @@ const NPC = {
     icon: "fa-solid fa-anchor",
     color: "#e28c53ff",
   },
+  FREESTRIKE: {
+    path: "monster.freeStrike",
+    icon: "fa-solid fa-sword",
+    color: "#d04444ff",
+  },
+};
+const RETAINER = {
+  RECOVERIES: {
+    path: "recoveries.value",
+    max: "recoveries.max",
+    icon: "fa-solid fa-heart-pulse",
+    color: "#85c4dc",
+  },
+  SPEED: {
+    path: "movement.value",
+    icon: "fa-solid fa-boot",
+    color: "#74c578ff",
+  },
+  STABILITY: {
+    path: "combat.stability",
+    icon: "fa-solid fa-anchor",
+    color: "#e28c53ff",
+  },
 };
 
 const uiScale = (() => {
@@ -57,8 +80,11 @@ Hooks.once("init", () => {
   Token.prototype.drawBars = async function (...args) {
     const result = await originalDrawBars.apply(this, args);
 
-    if (this?.actor.type === "hero") {
+    if ( (["hero", "retainer"].includes(this?.actor.type)) ) {
       renderAttributes(this, HERO);
+    }
+    if ( (["retainer"].includes(this?.actor.type)) ) {
+      renderAttributes(this, RETAINER);
     }
     if (this?.actor.type === "npc" && game.user.isGM) {
       renderAttributes(this, NPC);
@@ -91,7 +117,7 @@ function drawHealthAdds(token) {
   const thresholds = [];
   let ratios = [];
   // get the thresholds to draw
-  if (token.actor.system?.hero) {
+  if (["hero", "retainer"].includes(token.actor.type)) {
     // heros
     const stamina = token.actor.system.stamina;
     thresholds.push(0);
@@ -162,7 +188,7 @@ function drawHealthAdds(token) {
     })();
 
     (() => {
-      if (token.document.actor.type !== "hero") return;
+      if (!(["hero", "retainer"].includes(token.document.actor.type))) return;
 
       const stamina = token.actor.system.stamina;
 
@@ -185,7 +211,7 @@ function getFraction(stamina) {
 }
 
 function showFraction(token, state) {
-  if (token.actor && token.actor.type === "hero") {
+  if (token.actor && (["hero", "retainer"].includes(token.actor.type))) {
     const label = token.getChildByName("labelled");
 
     if (label) {
@@ -424,6 +450,7 @@ function getFontAwesomeUnicode(className) {
     "fa-solid fa-sparkles": "\uf890",
     "fa-solid fa-boot": "\uf782",
     "fa-solid fa-anchor": "\uf13d",
+    "fa-solid fa-sword": "\uf71c",
   };
   return map[className] || "\uf128"; // fallback: question mark
 }
