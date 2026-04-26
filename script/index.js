@@ -381,13 +381,17 @@ function assignAttributes(x) {
       renderAttributes(x, RETAINER);
       break;
     case "npc":
-      renderAttributes(x, NPC);
+      renderAttributes(x, NPC, true);
       break;
   }
 }
 
-function renderAttributes(token, attributes) {
+function renderAttributes(token, attributes, gmOnly = false) {
   if (token.alpha < 1) return; // don't render on the ghosts you get when dragging your token
+
+  if (gmOnly && !game.user.isGM) {
+    return;
+  }
 
   const existing = token?.getChildByName?.("attribute-circles");
   if (existing) existing.destroy();

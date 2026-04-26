@@ -144,25 +144,26 @@ export function chat() {
     // figure out stamina thresholds
     const minions = await group.system.minions;
 
-    const minionThreshold = [...minions].reduce((acc, minion, idx) => idx === 0 ? minion.actor.system.stamina.max : acc === minion.actor.system.stamina.max ? acc : 0, 0);
+    const minionThreshold = [...minions].reduce((acc, minion, idx) => (idx === 0 ? minion.actor.system.stamina.max : acc === minion.actor.system.stamina.max ? acc : 0), 0);
 
     const minionsPost = minionThreshold ? Math.min(Math.ceil(staminaPost / minionThreshold), minions.size) : 0;
     const minionsPre = minionThreshold ? Math.min(Math.ceil(staminaPre / minionThreshold), minions.size) : 0;
     const minionsDelta = minionsPost - minionsPre;
 
-
-    const x = await ChatMessage.create({
-      author: game.users.get(userId),
-      speaker: ChatMessage.getSpeaker({ combatant: group }),
-      content: `<span class="damage-log">${undoBtn} ${group.name} ${delta < 0 ? `took` : `healed`} ${(group.hasPlayerOwner || game.user.isGM) ? "<b>" : ""}<span class="${group.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${(group.hasPlayerOwner || game.user.isGM) ? "</b>" : ""}
-        <span class="small ${group.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre} -> ${staminaPost}) ${minionsDelta !== 0 ? `This&nbsp;${minionsDelta < 0 ? `kills` : `restores`} ${Math.abs(minionsDelta)} minion${Math.abs(minionsDelta) > 1 ? 's' : ''}.` : ``}</span></span>
+    if (game.user.isGM) {
+      const x = await ChatMessage.create({
+        author: game.users.get(userId),
+        speaker: ChatMessage.getSpeaker({ combatant: group }),
+        content: `<span class="damage-log">${undoBtn} ${group.name} ${delta < 0 ? `took` : `healed`} ${group.hasPlayerOwner || game.user.isGM ? "<b>" : ""}<span class="${group.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${group.hasPlayerOwner || game.user.isGM ? "</b>" : ""}
+        <span class="small ${group.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre} -> ${staminaPost}) ${minionsDelta !== 0 ? `This&nbsp;${minionsDelta < 0 ? `kills` : `restores`} ${Math.abs(minionsDelta)} minion${Math.abs(minionsDelta) > 1 ? "s" : ""}.` : ``}</span></span>
         `,
-    });
+      });
 
-    x.setFlag("ds-token-override", "undoData", {
-      groupId: group.id,
-      staminaDelta: delta,
-    });
+      x.setFlag("ds-token-override", "undoData", {
+        groupId: group.id,
+        staminaDelta: delta,
+      });
+    }
   });
 
   Hooks.on("updateActor", async (actor, newData, updateData, userId) => {
@@ -192,20 +193,22 @@ export function chat() {
 
     const undoBtn = `<button data-action="undoDamage" class="ds-override-undo owner-only"><i class="fa-solid fa-rotate-left"></i></button>`;
 
-    const x = await ChatMessage.create({
-      author: game.users.get(userId),
-      speaker: ChatMessage.getSpeaker({ actor }),
-      content: `<span class="damage-log">${undoBtn} ${actor.name} ${delta < 0 ? `took` : `healed`} ${(actor.hasPlayerOwner || game.user.isGM) ? "<b>" : ""}<span class="${actor.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${(actor.hasPlayerOwner || game.user.isGM) ? "</b>" : ""}
+    if (game.user.isGM) {
+      const x = await ChatMessage.create({
+        author: game.users.get(userId),
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<span class="damage-log">${undoBtn} ${actor.name} ${delta < 0 ? `took` : `healed`} ${actor.hasPlayerOwner || game.user.isGM ? "<b>" : ""}<span class="${actor.hasPlayerOwner ? "" : "gm-only"}">${Math.abs(delta)}</span> damage ${actor.hasPlayerOwner || game.user.isGM ? "</b>" : ""}
         <span class="small ${actor.hasPlayerOwner ? "" : "gm-only"}">(${staminaPre}${tempPre > 0 ? ` [${tempPre}]` : ``} -> ${staminaPost}${tempPost > 0 ? ` [${tempPost}]` : ``})</span></span>
         `,
-    });
+      });
 
-    x.setFlag("ds-token-override", "undoData", {
-      tokenId,
-      actorId,
-      tempDelta,
-      staminaDelta,
-    });
+      x.setFlag("ds-token-override", "undoData", {
+        tokenId,
+        actorId,
+        tempDelta,
+        staminaDelta,
+      });
+    }
   });
 
   const ogApplyDamage = ds.rolls.DamageRoll.prototype.applyDamage;
@@ -241,7 +244,7 @@ async function undoDmg(message) {
 
     const newVal = group.system.staminaValue - delta;
 
-    const r = await group.update({["system.staminaValue"]: newVal}, { isUndo: true });
+    const r = await group.update({ ["system.staminaValue"]: newVal }, { isUndo: true });
   }
 
   if (undoData.tokenId || undoData.actorId) {
@@ -275,6 +278,6 @@ async function undoDmg(message) {
     await message.setFlag("ds-token-override", "undone", true);
   } else {
     // Player asks the GM to do it
-    game.socket.emit("module.ds-token-override", { action: "setUndone", messageId: message.id });
+    if (actor.ownership?.[game.user.id] >= 3) game.socket.emit("module.ds-token-override", { action: "setUndone", messageId: message.id });
   }
 }
