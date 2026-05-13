@@ -9,23 +9,33 @@
   }
 }
 
-.ds-override-undo {
-  --input-height: 1em;
-  --button-size: 0;
-  font-size: 0.7em;
-  box-sizing: content-box;
-  padding-block: 0.5em 0.6em;
-  float: right;
-  margin-inline-start: 0.1em;
-
-  &[disabled] {
-    opacity: 0.5;
+.ds-override {
+  &.quickroll-button {
+    font-size: 0.8em;
+    text-transform: uppercase
   }
-}
 
-.damage-log:has(.ds-override-undo[disabled]), .damage-log.disabled {
-  text-decoration: line-through;
-  opacity: 0.8;
+  &.undo-button {
+    --input-height: 1em;
+    --button-size: 0;
+    font-size: 0.7em;
+    box-sizing: content-box;
+    padding-block: 0.5em 0.6em;
+    float: right;
+    margin-inline-start: 0.1em;
+
+    &[disabled] {
+      opacity: 0.5;
+    }
+  }
+
+  &.damage-log {
+    &:has(.ds-override-undo[disabled]), &.disabled {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+  }
 }
 
 .small {
