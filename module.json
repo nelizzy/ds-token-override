@@ -5,6 +5,7 @@
   "version": "XYZ",
   "esmodules": ["script/index.js"],
   "styles": ["style/style.css"],
+  "socket": "true",
   "authors": [
     {
       "name": "nelizzy"
