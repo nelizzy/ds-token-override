@@ -14,12 +14,11 @@ export const flags = (obj) => {
 }
 
 // make it easier to find this mod's logs in the console
-export const mod = ((prefix = `DS Token Override | `) => {
-  const log = (...args) => console.log(prefix, ...args);
-  const warn = (...args) => console.warn(prefix, ...args);
-  const error = (...args) => console.error(prefix, ...args);
-  return { log, warn, error };
-})();
+export const mod = ((prefix) => ({
+  log: console.log.bind(console, prefix),
+  warn: console.warn.bind(console, prefix),
+  error: console.error.bind(console, prefix),
+}))(`DS Token Override | `);
 
 // helps quickly check permissions of current user
 export const user = (() => {
