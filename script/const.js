@@ -1,4 +1,17 @@
-const ATTRIBUTES = {
+// used for settings, flags, and socket actions
+export const MODULE_ID = "ds-token-override";
+
+const ICON_GLYPH = {
+  "heart-pulse": "\uf21e",
+  "chevrons-up": "\uf325",
+  "sparkles": "\uf890",
+  "boot": "\uf782",
+  "anchor": "\uf13d",
+  "sword": "\uf71c",
+  "default": "\uf128",
+};
+
+export const ATTRIBUTES = {
   hero: {
     recoveries: {
       path: "recoveries.value",
@@ -54,14 +67,4 @@ const ATTRIBUTES = {
       color: "#e28c53ff",
     },
   },
-};
-
-const ICON_GLYPH = {
-  "heart-pulse": "\uf21e",
-  "chevrons-up": "\uf325",
-  "sparkles": "\uf890",
-  "boot": "\uf782",
-  "anchor": "\uf13d",
-  "sword": "\uf71c",
-  "default": "\uf128",
 };

@@ -1,13 +1,21 @@
-import { reRender } from "./index.js";
+import { MODULE_ID } from "./const.js";
+import { mod } from "./utils.js";
 
 const config = {
+  _TOKEN: {
+    label: "Token",
+    divider: 1
+  },
+
   enableTokenResource: {
     name: "Show Token Resources",
-    hint: "Toggle the circular resource display on tokens. Players only see it on tokens owned by at least 1 player.",
+    hint: "Toggle the circular resource display on tokens. Players only see party-owned tokens.",
     type: Boolean,
     scope: "user",
     default: true,
-    requiresReload: true,
+    onChange: () => {
+      // ...
+    },
   },
 
   tokenResourceSize: {
@@ -20,22 +28,39 @@ const config = {
       max: 18,
     },
     onChange: () => {
-      reRender();
+      // ...
     },
   },
 
   enableHudRolls: {
-    name: "Rollable Characteristics",
-    hint: "Adds column of Rollable Characteristics to Token HUD.",
+    name: "Characteristic Buttons",
+    hint: "Adds buttons to token HUD to quick roll that token's characteristics.",
     type: Boolean,
     scope: "user",
     default: false,
-    requiresReload: true,
+    onChange: () => {
+      // ...
+    },
+  },
+
+  _HEALTHBAR: {
+    label: "Healthbar",
+    divider: 2
+  },
+
+  healthbarTicks: {
+    name: "Healthbar Ticks",
+    type: Boolean,
+    scope: "user",
+    default: true,
+    onChange: () => {
+      // ...
+    },
   },
 
   healthLabelPlayersMinimumPerm: {
-    name: "Health Label on Player Owned Actors",
-    hint: "Appears on hovering a token owned by at least 1 player, for users of this role or higher.",
+    name: "Health Label: Player Actors",
+    hint: "Minimum permission needed to hover party-owned tokens and see health labels.",
     type: new foundry.data.fields.StringField({
       nullable: false,
       required: true,
@@ -44,13 +69,13 @@ const config = {
     default: CONST.USER_ROLES.PLAYER,
     scope: "world",
     onChange: () => {
-      reRender();
+      // ...
     },
   },
 
   healthLabelOtherMinimumPerm: {
-    name: "Health Label on Non-Player Owned Actors",
-    hint: "Appears on hovering any token, for users of this role or higher.",
+    name: "Health Label: Other Actors",
+    hint: "Minimum permission needed to hover any token and see health labels.",
     type: new foundry.data.fields.StringField({
       nullable: false,
       required: true,
@@ -59,7 +84,7 @@ const config = {
     default: CONST.USER_ROLES.ASSISTANT,
     scope: "world",
     onChange: () => {
-      reRender();
+      // ...
     },
   },
 
@@ -73,8 +98,13 @@ const config = {
       max: 24,
     },
     onChange: () => {
-      reRender();
+      // ...
     },
+  },
+
+  _MISC: {
+    label: "Miscellaneous Mods",
+    divider: 1
   },
 
   enableTrackerMods: {
@@ -88,7 +118,7 @@ const config = {
 
   enableQuickRoll: {
     name: "Quick Rolls",
-    hint: "Appends extra buttons to generic /roll messages to quickly deal damage, heal, or gain resources.",
+    hint: "Appends extra buttons to generic /roll messages.",
     type: Boolean,
     scope: "world",
     default: false,
@@ -97,7 +127,7 @@ const config = {
 
   enableDamageLog: {
     name: "Damage Log",
-    hint: "Sends a message when token health changes, along with undo button for token owner.",
+    hint: "Sends a message when token health changes.",
     type: Boolean,
     scope: "world",
     default: false,
@@ -105,13 +135,36 @@ const config = {
   },
 };
 
-export const init = () => {
-  for (const key in config) {
-    const opts = config[key];
+const sections = (() => {
+  const list = new Array();
 
-    game.settings.register("ds-token-override", key, {
+  const render = (container) => {
+    list.forEach(opts => {
+      const { label, divider } = opts[0];
+      const [settingTarget,] = opts[1];
+
+      container.querySelector(`.form-group:has([id="settings-config-${MODULE_ID}.${settingTarget}"])`)
+        .insertAdjacentHTML("beforebegin", `<div class="ds-override settings-header" style="--size: ${divider}">${label}</div}`);
+    })
+  }
+
+  const add = (...args) => list.push(args)
+
+  return { render, add }
+
+})();
+
+export const init = () => {
+  Hooks.on("renderSettingsConfig", (obj, el) => {
+    sections.render(el);
+  })
+
+  Object.entries(config).forEach(([key, opts], index, array) => {
+    if (opts.divider) return sections.add(opts, array[index + 1])
+
+    game.settings.register(MODULE_ID, key, {
       ...opts,
       config: true,
     });
-  }
+  })
 }
