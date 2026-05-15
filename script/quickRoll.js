@@ -1,13 +1,13 @@
-import { settings } from "./utils";
+import { settings } from "./utils.js";
 
 export const init = async () => {
   if (!await settings.get("enableQuickRoll")) return;
-  Hooks.on("renderChatMessageHTML", handleQuickRoll);
+  Hooks.on("renderChatMessageHTML", renderQuickRoll);
 }
 
 /* -------------------------------------------------------------------------- */
 
-const buttons = (roll, flavor) => {
+function buttons(roll, flavor) {
   const result = roll.result;
 
   const damageTypes = flavor ? [flavor] : [];
@@ -76,17 +76,22 @@ async function handleResource(result, evt) {
   // grant gm malice as long as no heroes are selected
   if (heroes.length === 0 && game.user.isGM) {
     const malice = game.actors.malice;
-    await game.settings.set(systemID, "malice", { value: malice.value + delta });
+    await game.settings.set(game.system.id, "malice", { value: malice.value + delta });
 
-    ChatMessage.create({
+    return ChatMessage.create({
       author: game.user,
       content: `GM ${delta > 0 ? "gained" : "lost"} ${Math.abs(delta)} malice.`,
     });
   }
 
   // otherwise, give selected heroes a heroic resource
+  // adds game user's hero to the pool if they're not already selected!
+  if (heroes.length === 0 && game.user.character.type === "hero") {
+    heroes.push(game.user.character);
+  }
+
   for (const token of heroes) {
-    const actor = token.actor;
+    const actor = token?.actor ?? token;
     actor.system.updateResource(delta);
 
     ChatMessage.create({
@@ -97,7 +102,7 @@ async function handleResource(result, evt) {
   }
 }
 
-async function handleQuickRoll(data, el) {
+async function renderQuickRoll(data, el) {
   if (data.type !== "base" || !data.isRoll) return;
 
   const roll = data.rolls?.[0];
