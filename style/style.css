@@ -12,7 +12,15 @@
 .ds-override {
   &.quickroll-button {
     font-size: 0.8em;
-    text-transform: uppercase
+    text-transform: uppercase;
+  }
+
+  &.quickroll-footer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5ch, 1fr));
+    gap: 0.5ch;
+    margin-top: 0.2ch;
+    order: 100;
   }
 
   &.undo-button {
@@ -23,22 +31,44 @@
     padding-block: 0.5em 0.6em;
     float: right;
     margin-inline-start: 0.1em;
-
-    &[disabled] {
-      opacity: 0.5;
-    }
   }
 
   &.damage-log {
-    &:has(.ds-override-undo[disabled]), &.disabled {
+    &:not(.can-see) {
+      b {
+        font-weight: normal;
+      }
+
+      [data-visibility="if-player-owned"] {
+        display: none;
+      }
+    }
+
+    &.disabled {
       text-decoration: line-through;
       opacity: 0.8;
     }
 
+    [disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
   }
-}
 
-.small {
-  font-size: 0.8em;
-  margin: 0;
+  .small {
+    display: inline-block;
+    font-size: 0.8em;
+    margin: 0;
+    text-decoration: inherit;
+  }
+
+  &.settings-header {
+    --size: 1;
+    color: var(--color-form-label);
+    font-weight: bold;
+    font-size: calc(1.7rem - (var(--size) * 0.3rem));
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 0.1rem;
+    margin-bottom: calc(-0.5 * var(--spacer-16));
+  }
 }
