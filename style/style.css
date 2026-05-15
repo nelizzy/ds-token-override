@@ -55,6 +55,21 @@
     }
   }
 
+
+
+  &.minion-wrap {
+    font-size: 0.9em;
+
+    .squad-stamina:not(.can-see) {
+      display: none;
+    }
+
+    i {
+      font-size: 0.85em;
+      opacity: 0.8;
+    }
+  }
+
   .small {
     display: inline-block;
     font-size: 0.8em;
