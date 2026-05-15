@@ -4,7 +4,6 @@ import { clamp, flags, mod, settings, user } from "./utils.js";
 export const init = async () => {
   if (!await settings.get("enableDamageLog")) return;
 
-  // happens on loading and also when editing a message (including setting a flag ;3c)
   Hooks.on("renderChatMessageHTML", renderLogMessage);
   Hooks.on("updateActor", updateStamina);
   Hooks.on("updateCombatantGroup", updateStamina);
@@ -19,6 +18,8 @@ export const init = async () => {
     await flags(message).set("undone", true);
   });
 }
+
+/* ---------------------- Message Creation and Rendering --------------------- */
 
 const visTag = `data-visibility="if-player-owned"`;
 
@@ -40,13 +41,6 @@ async function renderLogMessage(message, messageEl, evtData) {
     el.classList.add("can-see");
 }
 
-function undoDamage(opts) {
-  // logic for actually undoing the damage
-  mod.log(opts);
-  if (game.user.isGM) return flags(opts.message).set("undone", true)
-  socket.emit("setUndone", { messageId: opts.message.id });
-}
-
 function damageLogContent(logData) {
   let content = `<div class="ds-override damage-log">
     <button data-action="undoDamage" class="ds-override undo-button" ${visTag}><i class="fa-solid fa-rotate-left"></i></button>
@@ -60,14 +54,16 @@ function damageLogContent(logData) {
   return content;
 }
 
+/* ---------------- Hooks: updateActor, updateCombatantGroup ---------------- */
+
 async function updateStamina(...args) {
-  const [actor, diffData, evtData, evtUserId] = args;
+  const [, , evtData, evtUserId] = args;
 
   // only run once no matter how many users!
   if (!user.matches(evtUserId)) return;
 
   // ignore changes made by undo button
-  if (diffData.isUndo) return;
+  if (evtData.isUndo) return;
 
   // expected data output
   let logData = {
@@ -82,15 +78,17 @@ async function updateStamina(...args) {
 
   switch (evtData.documentName) {
     case 'Actor':
-      logData = handleActors(...args)
+      logData = logActors(...args)
       break;
 
     case 'CombatantGroup':
-      logData = handleMinions(...args)
+      logData = logMinions(...args)
       break;
   }
 
   if (!logData) return;
+
+  logData.flags.type = evtData.documentName;
 
   const logMessage = await ChatMessage.create({
     author: game.users.get(evtUserId),
@@ -101,7 +99,7 @@ async function updateStamina(...args) {
   flags(logMessage).set("undoData", logData.flags);
 }
 
-function handleMinions(group, diffData, evtData) {
+function logMinions(group, diffData, evtData) {
   if (group.system.combat.round === 0 && diffData.system.staminaValue === group.system.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value for a group
 
   const minions = group.system?.minions;
@@ -130,18 +128,14 @@ function handleMinions(group, diffData, evtData) {
     postValue: staminaPost, // string
     minionsDelta, // integer
     flags: {
-      groupId: group.id,
-      staminaDelta: delta
+      delta
     }, // obj of flags
   }
 }
 
-function handleActors(actor, diffData, evtData) {
+function logActors(actor, diffData, evtData) {
 
   if (diffData.system?.stamina === undefined) return;
-
-  const tokenId = evtData.parent?.id;
-  const actorId = actor.id;
 
   const postData = diffData.system.stamina;
   const preData = evtData.ds.previousStamina;
@@ -167,10 +161,48 @@ function handleActors(actor, diffData, evtData) {
     preValue, // string
     postValue, // string
     flags: {
-      tokenId,
-      actorId,
       tempDelta,
       staminaDelta
     }, // obj of flags
   }
+}
+
+/* ------------------------------- Undo Logic ------------------------------- */
+
+async function undoDamage(opts) {
+  // logic for actually undoing the damage
+  mod.log(opts);
+  const msgFlags = flags(opts.message)
+  const data = await msgFlags.get("undoData");
+
+  switch (data.type) {
+    case 'Actor':
+      await undoActor(opts.messageEvt.speakerActor, data);
+      break;
+
+    case 'CombatantGroup':
+      await undoMinions(opts.messageEvt.speakerActor, data)
+      break;
+  }
+
+  if (game.user.isGM) return msgFlags.set("undone", true);
+  socket.emit("setUndone", { messageId: opts.message.id });
+}
+
+async function undoMinions(speakerActor, { delta }) {
+  const group = speakerActor?.system?.combatGroup;
+  return await group.update({ ["system.staminaValue"]: group.system.staminaValue - delta }, { isUndo: true })
+}
+
+async function undoActor(speakerActor, { tempDelta, staminaDelta }) {
+  const updateData = {};
+
+  const { value: oldStamina = 0, min = 0, max = 0, temporary: oldTemp = 0 } = speakerActor.system.stamina;
+  const newStamina = clamp(oldStamina - staminaDelta, min, max);
+  const newTemp = Math.max(oldTemp - tempDelta, 0);
+
+  if (newStamina !== oldStamina) updateData["system.stamina.value"] = newStamina;
+  if (newTemp !== oldTemp) updateData["system.stamina.temporary"] = newTemp;
+
+  return await speakerActor.update(updateData, { isUndo: true });
 }
