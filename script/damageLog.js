@@ -100,13 +100,13 @@ async function updateStamina(...args) {
 }
 
 function logMinions(group, diffData, evtData) {
-  if (group.system.combat.round === 0 && diffData.system.staminaValue === group.system.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value for a group
+  if (group?.system?.combat?.round === 0 && diffData?.system?.staminaValue === group?.system?.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value for a group
 
   const minions = group.system?.minions;
 
-  if (minions.size < 1) return;
+  if (minions?.size < 1) return;
 
-  if (evtData.ds?.staminaDiff === undefined) return;
+  if (!evtData?.ds?.staminaDiff) return;
 
   const delta = evtData.ds.staminaDiff;
   const staminaPost = diffData.system.staminaValue;
@@ -171,7 +171,6 @@ function logActors(actor, diffData, evtData) {
 
 async function undoDamage(opts) {
   // logic for actually undoing the damage
-  mod.log(opts);
   const msgFlags = flags(opts.message)
   const data = await msgFlags.get("undoData");
 
