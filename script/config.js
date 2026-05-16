@@ -48,7 +48,7 @@ const config = {
     divider: 2
   },
 
-  healthbarTicks: {
+  enableHealthbarTicks: {
     name: "Healthbar Ticks",
     type: Boolean,
     scope: "user",
