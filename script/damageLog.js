@@ -1,5 +1,5 @@
 import { socket } from "./socket.js";
-import { clamp, flags, mod, settings, user } from "./utils.js";
+import { clamp, flags, mod, settings } from "./utils.js";
 
 export const init = async () => {
   if (!await settings.get("enableDamageLog")) return;
@@ -37,8 +37,11 @@ async function renderLogMessage(message, messageEl, evtData) {
     });
   }
 
-  if (evtData?.speakerActor?.isOwner)
-    el.classList.add("can-see");
+  if (evtData?.speakerActor) {
+    const { hasPlayerOwner, isOwner } = evtData.speakerActor;
+    el.classList.toggle("can-see", hasPlayerOwner || isOwner);
+    el.classList.toggle("can-use", isOwner);
+  }
 }
 
 function damageLogContent(logData) {
@@ -60,7 +63,7 @@ async function updateStamina(...args) {
   const [, , evtData, evtUserId] = args;
 
   // only run once no matter how many users!
-  if (!user.matches(evtUserId)) return;
+  if (game.user.gameId !== evtUserId) return;
 
   // ignore changes made by undo button
   if (evtData.isUndo) return;
