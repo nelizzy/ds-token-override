@@ -34,6 +34,8 @@
   }
 
   &.damage-log {
+    font-style: italic;
+
     &:not(.can-see) {
       b {
         font-weight: normal;
@@ -43,10 +45,23 @@
         display: none;
       }
     }
+    &:not(.can-use) {
+      .undo-button {
+        display: none;
+      }
+    }
 
     &.disabled {
       text-decoration: line-through;
       opacity: 0.8;
+
+      .chat-message:has(&) {
+        filter: contrast(0.5);
+      }
+
+      .dsp-chat:has(&) {
+        filter: contrast(0.6) brightness(0.6);
+      }
     }
 
     [disabled] {
@@ -54,8 +69,6 @@
       opacity: 0.5;
     }
   }
-
-
 
   &.minion-wrap {
     font-size: 0.9em;
