@@ -20,28 +20,6 @@ export const mod = ((prefix) => ({
   error: console.error.bind(console, prefix),
 }))(`DS Token Override | `);
 
-// helps quickly check permissions of current user
-export const user = (() => {
-  const role = (() => ({
-    is: (req) => game.user.role === req,
-    atLeast: (req) => game.user.role >= req,
-  }))();
-
-  const matches = (id) => game.userId === id;
-  const owns = (obj) => obj?.isOwner;
-  const authored = (obj) => obj?.author?.id === game.userId;
-
-  const minimum = (obj) => {
-    if (game.user.isGM) return "gm";
-    if (authored(obj)) return "author";
-    if (matches(obj.id)) return "matchesId";
-    if (owns(obj)) return "owner";
-    return "player";
-  }
-
-  return { role, minimum, matches, owns, authored };
-})();
-
 export const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 
 // GRAPHICAL UTILS
@@ -63,4 +41,16 @@ export function blendColors(color1, color2, ratio) {
   return PIXI.utils.rgb2hex(blended);
 }
 
-const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
+export const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
+
+export function createContainer({ opts }, attachTo) {
+  const container = new PIXI.Container();
+
+  for (const key in opts) {
+    container[key] = opts[key]
+  }
+
+  if (attachTo) attachTo.addChild(container);
+
+  return container;
+}
