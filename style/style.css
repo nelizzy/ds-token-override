@@ -36,6 +36,11 @@
   &.damage-log {
     font-style: italic;
 
+    .chat-message:has(&) {
+      width: 93%;
+      margin-inline: auto;
+    }
+
     &:not(.can-see) {
       b {
         font-weight: normal;

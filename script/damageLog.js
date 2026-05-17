@@ -45,12 +45,15 @@ async function renderLogMessage(message, messageEl, evtData) {
 }
 
 function damageLogContent(logData) {
+  const { name, preValue, postValue, minionsDelta, delta } = logData;
+  let { tempDelta } = logData.flags;
+
   let content = `<div class="ds-override damage-log">
     <button data-action="undoDamage" class="ds-override undo-button" ${visTag}><i class="fa-solid fa-rotate-left"></i></button>
-    ${logData.name} ${logData.delta < 0 ? "took" : "healed"} <b><span ${visTag}>${Math.abs(logData.delta)} </span>damage</b> <span class="small" ${visTag}>(${logData.preValue} → ${logData.postValue})</span>`
+    ${name} ${delta < 0 ? "took" : tempDelta > 0 ? "gained" : "healed"} <b><span ${visTag}>${Math.abs(delta)} </span>${delta < 0 ? "damage" : tempDelta > 0 ? "temp stamina" : "stamina"}</b> <span class="small" ${visTag}>(${preValue} → ${postValue}) </span>`
 
-  if (Math.abs(logData?.minionsDelta) > 0)
-    content += `<div class="small" ${visTag}>This ${logData.minionsDelta < 0 ? "defeats" : "restores"} ${Math.abs(logData.minionsDelta)} minion${Math.abs(logData.minionsDelta) > 1 ? "s" : ""}.</div>`
+  if (Math.abs(minionsDelta) > 0)
+    content += `<div class="small" ${visTag}>This ${minionsDelta < 0 ? "defeats" : "restores"} ${Math.abs(minionsDelta)} minion${Math.abs(minionsDelta) > 1 ? "s" : ""}.</div>`
 
   content += `</div>`
 
@@ -63,7 +66,7 @@ async function updateStamina(...args) {
   const [, , evtData, evtUserId] = args;
 
   // only run once no matter how many users!
-  if (game.user.gameId !== evtUserId) return;
+  if (game.userId !== evtUserId) return;
 
   // ignore changes made by undo button
   if (evtData.isUndo) return;

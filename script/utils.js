@@ -18,6 +18,8 @@ export const mod = ((prefix) => ({
   log: console.log.bind(console, prefix),
   warn: console.warn.bind(console, prefix),
   error: console.error.bind(console, prefix),
+  group: console.group.bind(console, prefix),
+  groupEnd: console.groupEnd.bind(console, prefix),
 }))(`DS Token Override | `);
 
 export const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
@@ -43,14 +45,6 @@ export function blendColors(color1, color2, ratio) {
 
 export const PreciseText = foundry.canvas.containers.PreciseText || PIXI.Text;
 
-export function createContainer({ opts }, attachTo) {
-  const container = new PIXI.Container();
-
-  for (const key in opts) {
-    container[key] = opts[key]
-  }
-
-  if (attachTo) attachTo.addChild(container);
-
-  return container;
+export const onAllCanvasTokens = (cb, ...args) => {
+  canvas.tokens.placeables.forEach(tokenObj => cb(tokenObj, ...args))
 }

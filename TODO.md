@@ -1,10 +1,9 @@
-- [] Adds a tick to stamina bar at dying & winded stages or at minion thresholds.
-- [] Shows numbers on healthbar on hovering token (size and permissions adjustable)
+- [x] Adds a tick to stamina bar at dying & winded stages or at minion thresholds.
+- [x] Shows numbers on healthbar on hovering token (size and permissions adjustable)
 - [] Adds circular icons to actor types showing the following attributes (size adjustable)
   - [] **Heroes**: Recoveries, Surges, Heroic Resources
   - [] **Retainers**: Recoveries, Speed, Stability
   - [] **NPCs** (GM only): Speed, Stability, Free Strike Value
-- [] *Displays characteristics on Token HUD, with ability to roll test by clicking the button*
 - [x] TEMPORARY: Fixes minion healthbar display until system fix is implemented
 ### Miscellaneous
 - [x] *Modifies the combat tab to track minion counts and group colors.*

@@ -9,15 +9,20 @@ Please feel more than free to fork the module and adjust it as you wish.
 ## Features
 Features that are italicized are disabled by default.
 ### Token
-- Adds a tick to stamina bar at dying & winded stages or at minion thresholds.
-- Shows numbers on healthbar on hovering token (size and permissions adjustable)
+- Adds a tick to stamina bar at dying & winded stages or at minion thresholds*
+- Shows numbers on healthbar on hovering token (size and permissions adjustable)*
 - Adds circular icons to actor types showing the following attributes (size adjustable)
   - **Heroes**: Recoveries, Surges, Heroic Resources
   - **Retainers**: Recoveries, Speed, Stability
   - **NPCs** (GM only): Speed, Stability, Free Strike Value
-- *Displays characteristics on Token HUD, with ability to roll test by clicking the button*
 - TEMPORARY: Fixes minion healthbar display until system fix is implemented
+
+\* Currently only works when Stamina is Bar 1
 ### Miscellaneous
-- *Modifies the combat tab to track minion counts and group colors.*
-- *Adds buttons to basic `/r` rolls, allowing you to quickly damage, heal, apply temp stamina, or gain either heroic resources or malice (when clicking as a GM with no heroes selected).*
-- *Sends a message when a token's health changes, with undo available to any user that owns the token.*
+- *Modifies the combat tab to track minion counts and group colors.
+- *Adds buttons to basic `/r` rolls, allowing you to quickly damage, heal, apply temp stamina, or gain either heroic resources or malice (when clicking as a GM with no heroes selected)*
+- *Sends a message when a token's health changes, with undo available to any user that owns the token*
+### Quick Fixes
+These are either all enabled or all disabled by the quick fix setting.
+- Animates minion healthbar changes
+- Adds high ground detection when targeting, with alert

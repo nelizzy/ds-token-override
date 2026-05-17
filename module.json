@@ -17,14 +17,15 @@
         "id": "draw-steel",
         "type": "system",
         "compatibility": {
-          "minimum": "0.10.0"
+          "minimum": "0.10.0",
+          "verified": "1"
         }
       }
     ]
   },
   "compatibility": {
     "minimum": "13.351",
-    "verified": "13.351"
+    "verified": "14.361"
   },
   "url": "This is auto replaced",
   "readme": "This is auto replaced",

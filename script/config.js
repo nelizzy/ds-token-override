@@ -1,4 +1,7 @@
 import { MODULE_ID } from "./const.js";
+import { healthbarTicks } from "./tokenMods/healthbarTicks.js";
+import { healthLabels, resizeText } from "./tokenMods/healthLabels.js";
+import { tokenResource } from "./tokenMods/tokenResource.js";
 import { mod } from "./utils.js";
 
 const config = {
@@ -13,8 +16,12 @@ const config = {
     type: Boolean,
     scope: "user",
     default: true,
-    onChange: () => {
-      // ...
+    onChange: (enabled) => {
+      if (enabled) {
+        tokenResource.forceInit();
+      } else {
+        tokenResource.destroyAll();
+      }
     },
   },
 
@@ -22,23 +29,13 @@ const config = {
     name: "Token Resource Size",
     type: Number,
     default: 15,
+    scope: "user",
     range: {
       min: 10,
       step: 1,
       max: 18,
     },
-    onChange: () => {
-      // ...
-    },
-  },
-
-  enableHudRolls: {
-    name: "Characteristic Buttons",
-    hint: "Adds buttons to token HUD to quick roll that token's characteristics.",
-    type: Boolean,
-    scope: "user",
-    default: false,
-    onChange: () => {
+    onChange: (val) => {
       // ...
     },
   },
@@ -53,52 +50,67 @@ const config = {
     type: Boolean,
     scope: "user",
     default: true,
-    onChange: () => {
-      // ...
+    onChange: (enabled) => {
+      if (enabled) {
+        healthbarTicks.forceInit();
+      } else {
+        healthbarTicks.destroyAll();
+      }
     },
   },
 
   healthLabelPlayersMinimumPerm: {
     name: "Health Label: Player Actors",
     hint: "Minimum permission needed to hover party-owned tokens and see health labels.",
-    type: new foundry.data.fields.StringField({
+    type: new foundry.data.fields.NumberField({
       nullable: false,
       required: true,
       choices: CONST.USER_ROLE_NAMES,
     }),
     default: CONST.USER_ROLES.PLAYER,
     scope: "world",
-    onChange: () => {
-      // ...
+    onChange: async (players) => {
+      if (await healthLabels.isEnabled({ players })) {
+        if (healthLabels._enabledStatus) return;
+        healthLabels.forceInit();
+      } else {
+        healthLabels.destroyAll();
+      }
     },
   },
 
   healthLabelOtherMinimumPerm: {
     name: "Health Label: Other Actors",
     hint: "Minimum permission needed to hover any token and see health labels.",
-    type: new foundry.data.fields.StringField({
+    type: new foundry.data.fields.NumberField({
       nullable: false,
       required: true,
       choices: CONST.USER_ROLE_NAMES,
     }),
     default: CONST.USER_ROLES.ASSISTANT,
     scope: "world",
-    onChange: () => {
-      // ...
+    onChange: async (others) => {
+      if (await healthLabels.isEnabled({ others })) {
+        if (healthLabels._enabledStatus) return;
+        healthLabels.forceInit();
+      } else {
+        healthLabels.destroyAll();
+      }
     },
   },
 
   healthLabelSize: {
     name: "Health Label Size",
     type: Number,
+    scope: "user",
     default: 18,
     range: {
       min: 12,
       step: 1,
       max: 24,
     },
-    onChange: () => {
-      // ...
+    onChange: (val) => {
+      canvas.tokens.placeables.forEach(obj => resizeText(obj, val))
     },
   },
 
@@ -131,6 +143,15 @@ const config = {
     type: Boolean,
     scope: "world",
     default: false,
+    requiresReload: true,
+  },
+
+  enableQuickFixes: {
+    name: "Other Quick Fixes",
+    hint: "Misc. system fixes: see github for full list.",
+    type: Boolean,
+    scope: "world",
+    default: true,
     requiresReload: true,
   },
 };
