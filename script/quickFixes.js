@@ -1,10 +1,9 @@
 import { settings } from "./utils.js";
 
 export const init = () => {
-  if (!settings.get("enableQuickFixes")) return;
-
-  minionHealthbarFix();
-  highGroundAutomation();
+  if (settings.get("minionHealthbars")) minionHealthbarFix();
+  if (settings.get("highGroundAutomation")) highGroundAutomation();
+  if (settings.get("combatGroupDeletion")) deleteCombatantGroupRecursive();
 }
 
 // delete when fixed in base foundry!!
@@ -33,8 +32,8 @@ function minionHealthbarFix() {
   })();
 }
 
+// CREDIT TO COLINGREENLEAF (https://github.com/ColinGreenleaf)
 function highGroundAutomation() {
-  // CREDIT TO COLINGREENLEAF (https://github.com/ColinGreenleaf)
   const AbilitySystem = CONFIG.Item.dataModels?.ability;
 
   const _original = AbilitySystem.prototype.getTargetModifiers;
@@ -58,4 +57,15 @@ function highGroundAutomation() {
     return modifiers;
   };
 
+}
+
+// Deleting combat groups from a combat now also removes all combatants from combat instead of popping them out to be a solo fighter.
+function deleteCombatantGroupRecursive() {
+  Hooks.on("deleteCombatantGroup", fn)
+
+  function fn(group) {
+    const combat = group.parent;
+    const members = group.members.map(x => x.id);
+    combat.deleteEmbeddedDocuments("Combatant", [...members]);
+  }
 }

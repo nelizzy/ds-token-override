@@ -182,14 +182,33 @@ const config = {
     requiresReload: true,
   },
 
-  enableQuickFixes: {
-    name: "Other Quick Fixes",
-    hint: `Variety small scope fixes, see the [README on Github](https://github.com/nelizzy/ds-token-override/blob/main/README.md) for more details.`,
+  minionHealthbars: {
+    name: "Fix Minion Healthbars",
+    hint: `Smoothly animates minion squad healthbars when updating health (will be removed when implemented by system)`,
     type: Boolean,
     scope: "world",
     default: true,
     requiresReload: true,
   },
+
+  highGroundAutomation: {
+    name: "Automate High Ground Edges",
+    hint: `Automatically adds per-target edges for high ground, with an alert`,
+    type: Boolean,
+    scope: "world",
+    default: true,
+    requiresReload: true,
+  },
+
+  combatGroupDeletion: {
+    name: "Combat Group Deletion+",
+    hint: `Deleting combat groups from a combat now also removes all combatants from combat instead of popping them out to be a solo fighter`,
+    type: Boolean,
+    scope: "world",
+    default: false,
+    requiresReload: true,
+  },
+
 };
 
 const sections = (() => {

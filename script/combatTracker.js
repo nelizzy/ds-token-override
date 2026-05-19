@@ -23,7 +23,7 @@ function override() {
 
 function modifyRender(_, html, evtData) {
   game?.combat?.groups?.forEach(group => {
-    const el = html.querySelector(`[data-group-id=${group.id}]`)
+    const el = html.querySelector(`[data-group-id="${group.id}"]`)
     if (!el) return;
 
     const color = flags(group).get("groupColor").then(color => {
