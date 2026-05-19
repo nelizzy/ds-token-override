@@ -1,17 +1,28 @@
 # DS Token Override
 NOT COMPATIBLE WITH BAR BRAWL
 
-## Features
-- Adds a tick to stamina bar at dying & winded stages
-- Shows temp stamina on top of stamina bar
-- Shows numbers on healthbar on hover FOR HEROES ONLY
-- Add editable fields on HERO token HUD for recoveries > heroic resources > surges
-- Shows the three fields above on token
-- Displays characteristics on token HUD, with ability to roll test by clicking
+This module has been a personal playground toolbox for me, collecting all the little fixes that I like. It's grown a bit from just affecting the token, so maybe I should rename it? Maybe one day.
 
-## ToDo
-- Settings for editing the resources tracked, their icons, and their colors
-  - Potentially on per token basis (unlikely)
-  - Setting to choose where the three attributes are aligned (left/top/right)
-  - Allow customizing how many resources are shown (max 3 per side)
-- Settings to control showing the healthbar numbers on heroes and npcs
+While I will consider requests, they are not guaranteed to be added.
+Please feel more than free to fork the module and adjust it as you wish.
+
+## Features
+Features that are italicized are disabled by default.
+### Token
+- Adds a tick to stamina bar at dying & winded stages or at minion thresholds*
+- Shows numbers on healthbar on hovering token (size and permissions adjustable)*
+- Adds circular icons to actor types showing the following attributes (size adjustable)
+  - **Heroes**: Recoveries, Surges, Heroic Resources
+  - **Retainers**: Recoveries, Speed, Stability
+  - **NPCs** (GM only): Speed, Stability, Free Strike Value
+- TEMPORARY: Fixes minion healthbar display until system fix is implemented
+
+\* Currently only works when Stamina is Bar 1
+### Miscellaneous
+- *Modifies the combat tab to track minion counts and group colors.
+- *Adds buttons to basic `/r` rolls, allowing you to quickly damage, heal, apply temp stamina, or gain either heroic resources or malice (when clicking as a GM with no heroes selected)*
+- *Sends a message when a token's health changes, with undo available to any user that owns the token*
+### Quick Fixes
+These are either all enabled or all disabled by the quick fix setting.
+- Animates minion healthbar changes
+- Adds high ground detection when targeting, with alert

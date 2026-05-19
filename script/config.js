@@ -1,274 +1,251 @@
-import { icons } from "./icons.js";
-import { reRender } from "./index.js";
-import { ResourceData } from "./resource.js";
+import { MODULE_ID } from "./const.js";
+import { healthbarTicks } from "./tokenMods/healthbarTicks.js";
+import { healthLabels } from "./tokenMods/healthLabels.js";
+import { tokenResource } from "./tokenMods/tokenResource.js";
+import { mod, onAllCanvasTokens } from "./utils.js";
 
-const displayModes = {
-  [CONST.TOKEN_DISPLAY_MODES.NONE]: "Never Displayed",
-  [CONST.TOKEN_DISPLAY_MODES.CONTROL]: "When Controlled",
-  [CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER]: "Hovered by Owner",
-  [CONST.TOKEN_DISPLAY_MODES.HOVER]: "Hovered by Anyone",
-  [CONST.TOKEN_DISPLAY_MODES.OWNER]: "Always for Owner",
-  [CONST.TOKEN_DISPLAY_MODES.ALWAYS]: "Always for Everyone",
-};
+const config = {
+  _TOKEN: {
+    label: "Token",
+    divider: 1
+  },
 
-const settings = {
-  showResources: {
-    name: "Show Resources",
-    hint: "Toggle the circular resource display on tokens.",
+  enableTokenResource: {
+    name: "Show Token Resources",
+    hint: "Toggle the circular resource display on tokens. Players only see party-owned tokens.",
     type: Boolean,
     scope: "user",
     default: true,
-    onChange: (value) => {
-      reRender();
+    onChange: (enabled, data, user) => {
+      if (enabled) {
+        tokenResource.enable(user);
+      } else {
+        tokenResource.disable(user);
+      }
     },
   },
 
-  groupColor: {
-    name: "Extra Combat Tracker Details",
-    hint: "Adds group colors and minion count to combat tracker.",
-    type: Boolean,
-    scope: "world",
-    default: false,
-    onChange: (value) => {
-      ui.combat.render();
-    },
-  },
-
-  resourceLabelSize: {
-    name: "Resource Label Size",
+  tokenResourceSize: {
+    name: "Token Resource Size",
     type: Number,
     default: 15,
+    scope: "user",
     range: {
       min: 10,
       step: 1,
       max: 18,
     },
-    onChange: (value) => {
-      reRender();
+    onChange: (val) => {
+      onAllCanvasTokens(tokenResource.rescale)
     },
   },
 
-  showCharacteristics: {
-    name: "Rollable Characteristics",
-    hint: "Adds column of Rollable Characteristics to Token HUD. Token HUD must be closed and reopened to see change.",
+  _HEALTHTICKS: {
+    label: "Healthbar Ticks",
+    divider: 2
+  },
+
+  enableHealthbarTicks: {
+    name: "Show Healthbar Ticks",
     type: Boolean,
     scope: "user",
-    onChange: (value) => {
-      reRender();
-    },
-
     default: true,
+    onChange: function (enabled, data, user) {
+      mod.log(arguments);
+      if (enabled) {
+        healthbarTicks.enable(user);
+      } else {
+        healthbarTicks.disable(user);
+      }
+    },
+  },
+
+  tickColor: {
+    name: "Set Tick Color",
+    type: new foundry.data.fields.ColorField({
+      nullable: false,
+      required: true,
+    }),
+    scope: "user",
+    default: "#000",
+    onChange: (color) => {
+      onAllCanvasTokens(healthbarTicks.draw, { color })
+    },
+  },
+
+  _HEALTHLABEL: {
+    label: "Healthbar Label",
+    divider: 2
+  },
+  healthLabelAlignment: {
+    name: "Label Alignment",
+    type: new foundry.data.fields.StringField({
+      nullable: false,
+      required: true,
+      choices: {
+        "top": "Above Health Bar",
+        "middle": "Overlaying Health Bar",
+      },
+    }),
+    default: "top",
+    scope: "user",
+    onChange: (align) => {
+      onAllCanvasTokens(healthLabels.rescale, { align })
+    }
   },
 
   healthLabelSize: {
-    name: "Health Label Size",
+    name: "Label Size",
     type: Number,
+    scope: "user",
     default: 18,
     range: {
       min: 12,
       step: 1,
       max: 24,
     },
-    onChange: (value) => {
-      reRender();
+    onChange: (val) => {
+      onAllCanvasTokens(healthLabels.resizeText, val)
     },
   },
 
-  showDamageLog: {
-    name: "Show Damage Log",
-    hint: "Sends a message when token health changes, along with undo button for token owner.",
+  healthLabelPlayersMinimumPerm: {
+    name: "Health Label: Player Actors",
+    hint: "Minimum permission needed to hover party-owned tokens and see health labels.",
+    type: new foundry.data.fields.NumberField({
+      nullable: false,
+      required: true,
+      choices: CONST.USER_ROLE_NAMES,
+    }),
+    default: CONST.USER_ROLES.PLAYER,
+    scope: "world",
+    onChange: async (players) => {
+      if (await healthLabels.isEnabled({ players })) {
+        if (healthLabels._enabledStatus) return;
+        healthLabels.forceInit();
+      } else {
+        healthLabels.destroyAll();
+      }
+    },
+  },
+
+  healthLabelOtherMinimumPerm: {
+    name: "Health Label: Other Actors",
+    hint: "Minimum permission needed to hover any token and see health labels.",
+    type: new foundry.data.fields.NumberField({
+      nullable: false,
+      required: true,
+      choices: CONST.USER_ROLE_NAMES,
+    }),
+    default: CONST.USER_ROLES.ASSISTANT,
+    scope: "world",
+    onChange: async (others) => {
+      if (await healthLabels.isEnabled({ others })) {
+        if (healthLabels._enabledStatus) return;
+        healthLabels.forceInit();
+      } else {
+        healthLabels.destroyAll();
+      }
+    },
+  },
+
+  _MISC: {
+    label: "Miscellaneous Mods",
+    divider: 1,
+    gmOnly: true
+  },
+
+  enableTrackerMods: {
+    name: "Extra Combat Tracker Details",
+    hint: "Adds group colors and minion count to default combat tracker.",
     type: Boolean,
     scope: "world",
     default: false,
-    requiresReload: true
-  }
+    requiresReload: true,
+  },
 
-  // healthLabelHero: {
-  //   name: "Health Label (Heroes)",
-  //   type: new foundry.data.fields.StringField({
-  //     nullable: false,
-  //     required: true,
-  //     choices: displayModes,
-  //   }),
-  //   default: CONST.TOKEN_DISPLAY_MODES.HOVER,
-  //   scope: "world",
-  //   onChange: (value) => {
-  //     reRender();
-  //   },
-  // },
+  enableQuickRoll: {
+    name: "Quick Rolls",
+    hint: "Appends extra buttons to generic /roll messages.",
+    type: Boolean,
+    scope: "world",
+    default: false,
+    requiresReload: true,
+  },
 
-  // healthLabelNPC: {
-  //   name: "Health Label (NPCs)",
-  //   type: new foundry.data.fields.StringField({
-  //     nullable: false,
-  //     required: true,
-  //     choices: displayModes,
-  //   }),
-  //   default: CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,
-  //   scope: "world",
-  //   onChange: (value) => {
-  //     reRender();
-  //   },
-  // },
+  enableDamageLog: {
+    name: "Damage Log",
+    hint: "Sends a message with undo button when token health changes.",
+    type: Boolean,
+    scope: "world",
+    default: false,
+    requiresReload: true,
+  },
 
-  // tempStaminaColor: {
-  //   name: "Temp Stamina Color",
-  //   type: new foundry.data.fields.ColorField(),
-  //   default: "#5ac1e0",
-  //   scope: "user",
-  //   onChange: (value) => {
-  //     reRender();
-  //   },
-  // },
+  enableQuickFixes: {
+    name: "Other Quick Fixes",
+    hint: `Variety small scope fixes, see the [README on Github](https://github.com/nelizzy/ds-token-override/blob/main/README.md) for more details.`,
+    type: Boolean,
+    scope: "world",
+    default: true,
+    requiresReload: true,
+  },
 };
 
-const resourceDefaults = [
-  {
-    path: "recoveries.value",
-    max: "recoveries.max",
-    icon: "",
-    color: "#85c4dc",
-  },
-  {
-    path: "hero.surges",
-    max: "",
-    icon: "",
-    color: "#cd8eee",
-  },
-  {
-    path: "hero.primary.value",
-    max: "",
-    icon: "",
-    color: "#ffe493",
-  },
-];
+const sections = (() => {
+  const list = new Array();
 
-// class ResourceMenuClass extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
-//   static DEFAULT_OPTIONS = {
-//     id: "resource-menu",
-//     tag: "form",
-//     template: "modules/ds-token-override/templates/resource-menu.hbs",
-//     window: {
-//       title: "Hero Token Resources",
-//       resizable: true,
-//     },
-//     form: {
-//       handler: ResourceMenuClass._onSubmit,
-//       submitOnChange: false,
-//     },
-//     position: {
-//       width: 600,
-//       height: 400,
-//     },
-//   };
+  const render = (container) => {
+    list.forEach(opts => {
 
-//   async _prepareContext(options) {
-//     const context = await super._prepareContext(options);
-//     context.resources = game.settings.get("ds-token-override", "resources").map((r, i) => ({ ...r, index: i + 1 }));
-//     return context;
-//   }
+      const { gmOnly, divider, label } = opts[0];
+      if (gmOnly && !game.user.isGM) return;
 
-//   _activateListeners(html) {
-//     super._activateListeners(html);
-//     html.querySelectorAll('[data-action="pickIcon"]').forEach((btn) => {
-//       btn.addEventListener("click", (ev) => {
-//         const index = ev.currentTarget.dataset.index;
-//         this.showIconPicker(index, html);
-//       });
-//     });
-//   }
+      const [settingTarget,] = opts[1];
 
-//   showIconPicker(index, formElement) {
-//     const iconPickerHtml = `
-//       <div class="icon-picker">
-//         <style>
-//         .icon-list {
-//           margin-top: 1em;
-//           display: grid;
-//           grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
-//           gap: 3px;
-//         }
-//         </style>
+      container.querySelector(`.form-group:has([id="settings-config-${MODULE_ID}.${settingTarget}"])`)
+        .insertAdjacentHTML("beforebegin", `<div class="ds-override settings-header" style="--size: ${divider}">${label}</div}`);
+    })
+  }
 
-//         <input type="text" class="search-icons" placeholder="Filter icons" />
-//         <section class="icon-list">
-//           ${icons
-//             .map(
-//               (icon) => `
-//           <button type="button" class="inline-control icon fa-solid fa-${icon.main}" data-values="${[icon.main, icon.alt].join(" ")}" data-glyph="${icon.glyph}" data-action="selectIcon"></button>
-//           `,
-//             )
-//             .join("\n")}
-//         </section>
-//       </div>
-//     `;
+  const add = (...args) => list.push(args)
 
-//     const dialog = new Dialog({
-//       title: "Pick Icon",
-//       content: iconPickerHtml,
-//       buttons: {},
-//       render: (html) => {
-//         const searchInput = html.querySelector(".search-icons");
-//         const iconButtons = html.querySelectorAll('[data-action="selectIcon"]');
+  return { render, add }
 
-//         searchInput.addEventListener("input", (ev) => {
-//           const filter = ev.target.value.toLowerCase();
-//           iconButtons.forEach((btn) => {
-//             const values = btn.dataset.values;
-//             btn.style.display = values.includes(filter) ? "" : "none";
-//           });
-//         });
+})();
 
-//         iconButtons.forEach((btn) => {
-//           btn.addEventListener("click", (ev) => {
-//             const glyph = ev.currentTarget.dataset.glyph;
-//             formElement.querySelector(`[name="resources.${index}.icon"]`).value = glyph;
-//             dialog.close();
-//           });
-//         });
-//       },
-//     });
-//     dialog.render(true);
-//   }
+const markdown = (el) => {
+  const domWalk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
 
-//   static async _onSubmit(event, form, formData) {
-//     const resources = [];
-//     for (let i = 0; i < 3; i++) {
-//       resources.push({
-//         path: formData[`resources.${i}.path`],
-//         max: formData[`resources.${i}.max`],
-//         icon: formData[`resources.${i}.icon`],
-//         color: formData[`resources.${i}.color`],
-//       });
-//     }
-//     await game.settings.set("ds-token-override", "resources", resources);
-//   }
-// }
+  while (domWalk.nextNode()) {
+    const node = domWalk.currentNode;
 
-export function initializeSettings() {
-  for (const key in settings) {
-    const opts = settings[key];
+    // looking for md links as [text](url)
+    const regex = /\[(.*?)\]\((.*?)\)/g;
+    if (!regex.test(node.nodeValue)) continue;
 
-    game.settings.register("ds-token-override", key, {
+    const span = document.createElement("span");
+    span.innerHTML = node.nodeValue.replace(regex, `<a href="$2">$1</a>`)
+
+    node.replaceWith(...span.childNodes);
+  }
+
+}
+
+export const init = () => {
+  Hooks.on("renderSettingsConfig", (obj, el) => {
+    const tab = el.querySelector(`.tab[data-category="ds-token-override"]`);
+    sections.render(tab);
+    markdown(tab);
+  })
+
+  Object.entries(config).forEach(([key, opts], index, array) => {
+    if (opts.divider) return sections.add(opts, array[index + 1])
+
+    game.settings.register(MODULE_ID, key, {
       ...opts,
       config: true,
     });
-  }
-
-  game.settings.register("ds-token-override", "resources", {
-    name: "Resources",
-    scope: "world",
-    type: new foundry.data.fields.ArrayField(new foundry.data.fields.EmbeddedDataField(ResourceData)),
-    default: resourceDefaults.map((x) => new ResourceData(x)),
-    config: false,
-  });
-
-  // game.settings.registerMenu("ds-token-override", "resourceMenu", {
-  //   name: "Hero Token Resources",
-  //   label: "Configure",
-  //   hint: "Manage details about the circular resources on hero tokens",
-  //   icon: "fas fa-gears",
-  //   type: ResourceMenuClass,
-  //   restricted: true,
-  // });
+  })
 }

@@ -9,26 +9,129 @@
   }
 }
 
-.ds-override-undo {
-  --input-height: 1em;
-  --button-size: 0;
-  font-size: 0.7em;
-  box-sizing: content-box;
-  padding-block: 0.5em 0.6em;
-  float: right;
-  margin-inline-start: 0.1em;
+.ds-override {
+  &.quickroll-button {
+    font-size: 0.8em;
+    text-transform: uppercase;
+  }
 
-  &[disabled] {
-    opacity: 0.5;
+  &.quickroll-footer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5ch, 1fr));
+    gap: 0.5ch;
+    margin-top: 0.2ch;
+    order: 100;
+  }
+
+  &.undo-button {
+    --input-height: 1em;
+    --button-size: 0;
+    font-size: 0.7em;
+    box-sizing: content-box;
+    padding-block: 0.5em 0.6em;
+    float: right;
+    margin-inline-start: 0.1em;
+  }
+
+  &.damage-log {
+    font-style: italic;
+
+    .chat-message:has(&) {
+      width: 93%;
+      margin-inline: auto;
+    }
+
+    &:not(.can-see) {
+      b {
+        font-weight: normal;
+      }
+
+      [data-visibility="if-player-owned"] {
+        display: none;
+      }
+    }
+    &:not(.can-use) {
+      .undo-button {
+        display: none;
+      }
+    }
+
+    &.disabled {
+      text-decoration: line-through;
+      opacity: 0.8;
+
+      .chat-message:has(&) {
+        filter: contrast(0.5);
+      }
+
+      .dsp-chat:has(&) {
+        filter: contrast(0.6) brightness(0.6);
+      }
+    }
+
+    [disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+
+  &.minion-wrap {
+    font-size: 0.9em;
+
+    .squad-stamina:not(.can-see) {
+      display: none;
+    }
+
+    i {
+      font-size: 0.85em;
+      opacity: 0.8;
+    }
+  }
+
+  .small {
+    display: inline-block;
+    font-size: 0.8em;
+    margin: 0;
+    text-decoration: inherit;
+  }
+
+  &.settings-header {
+    --size: 1;
+    color: var(--color-form-label);
+    font-weight: bold;
+    font-size: calc(1.7rem - (var(--size) * 0.3rem));
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 0.1rem;
+    margin-bottom: calc(-0.5 * var(--spacer-16));
+  }
+
+  &.hero-hud {
+    display: flex;
+    gap: 4px;
+
+    input {
+      flex: 1 1 100%;
+      padding: 0.2em;
+      border-color: var(--color);
+      box-shadow: 0 0 10px var(--color-shadow-dark);
+      height: var(--control-size);
+      line-height: var(--control-size);
+      border-radius: 8px;
+      font-size: var(--font-size-16);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .attribute:has(&) {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      height: var(--control-size);
+      align-content: end;
+    }
   }
 }
 
-.damage-log:has(.ds-override-undo[disabled]), .damage-log.disabled {
-  text-decoration: line-through;
-  opacity: 0.8;
-}
-
-.small {
-  font-size: 0.8em;
-  margin: 0;
+[data-category="ds-token-override"] a {
+  color: currentColor;
 }
