@@ -26,8 +26,9 @@ function modifyRender(_, html, evtData) {
     const el = html.querySelector(`[data-group-id=${group.id}]`)
     if (!el) return;
 
-    const color = flags(group).get("groupColor");
-    if (color) el.style.setProperty("--group-color", color);
+    const color = flags(group).get("groupColor").then(color => {
+      if (color) el.style.setProperty("--group-color", color)
+    })
 
     const staminaEl = el.querySelector(".squad-stamina");
     if (!staminaEl) return;
