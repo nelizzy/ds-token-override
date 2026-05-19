@@ -22,7 +22,6 @@ Features that are italicized are disabled by default.
 - *Modifies the combat tab to track minion counts and group colors.
 - *Adds buttons to basic `/r` rolls, allowing you to quickly damage, heal, apply temp stamina, or gain either heroic resources or malice (when clicking as a GM with no heroes selected)*
 - *Sends a message when a token's health changes, with undo available to any user that owns the token*
-### Quick Fixes
-These are either all enabled or all disabled by the quick fix setting.
 - Animates minion healthbar changes
-- Adds high ground detection when targeting, with alert
+- Adds high ground detection when targeting, with alert (credit to [ColinGreenleaf](https://github.com/ColinGreenleaf))
+- *Modifies combatant group deletion to delete all member combatants from the combat as well*
