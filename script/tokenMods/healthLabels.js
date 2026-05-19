@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../const.js";
-import { mod, PreciseText, settings, uiScale } from "../utils.js";
+import { mod, onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const healthLabels = makeOverlaySection({
@@ -14,7 +14,15 @@ export const healthLabels = makeOverlaySection({
   onSetVisibility: setVisibility,
   hooks: [
     ["updateActor", updateHealthActors],
-    ["highlightObjects", highlightAll]
+    ["highlightObjects", highlightAll],
+    ["hoverToken", (token) => setVisibility(token)],
+    ["renderDrawSteelTokenHUD", (app) => {
+      const token = app.object;
+      setVisibility(token, true);
+      Hooks.once("closeDrawSteelTokenHUD", () => {
+        setVisibility(token, false)
+      });
+    }],
   ]
 })
 
@@ -23,6 +31,21 @@ const perm = (role) => {
     role,
     canSee: game?.user?.hasRole(role) && role > 0
   }
+}
+
+const ALIGNMENT_CONFIG = {
+  top: {
+    anchor: [0.5, 0.8],
+    y: (tokenObj, barBounds) => tokenObj.h - (barBounds.height * 1)
+  },
+  middle: {
+    anchor: [0.5, 0.5],
+    y: (tokenObj, barBounds) => tokenObj.h - (barBounds.height * 0.5)
+  },
+  // bottom: {
+  //   anchor: [0.5, 0.5],
+  //   y: (tokenObj, barBounds) => tokenObj.h
+  // },
 }
 
 /* ----------------------------- GENERIC HANDLER ---------------------------- */
@@ -46,17 +69,16 @@ function disable() {
 function create(tokenObj) {
   if (!tokenObj) return;
 
-  const label = new PreciseText("TEST", {
+  const label = new PreciseText("", {
     ...CONFIG.canvasTextStyle, // <- foundry defaults
-    fontSize: game.settings.get("ds-token-override", "healthLabelSize") * uiScale.get(),
+    fontSize: settings.get("healthLabelSize") * uiScale.get(),
     fill: "#FFF",
     align: "center",
   });
   label.name = healthLabels.name;
-  label.anchor.set(0.5, 0.5);
   label.zIndex = Infinity;
-
   tokenObj.addChild(label);
+  setVisibility(tokenObj, false);
 };
 
 function draw(tokenObj, { staminaMax, staminaValue } = {}) {
@@ -70,33 +92,37 @@ function draw(tokenObj, { staminaMax, staminaValue } = {}) {
     const x = actor.system.stamina;
     staminaMax ??= x.max;
     staminaValue ??= `${x.value}`
-    if (x.temporary) staminaValue += `[${x.temporary}]`;
+    if (x.temporary) staminaValue += `+${x.temporary}`;
   }
 
   const label = healthLabels.safeGet(tokenObj);
   label.text = `${staminaValue} / ${staminaMax}`
-
 }
 
-function rescale(tokenObj) {
+function rescale(tokenObj, { align, barSize } = {}) {
   const label = healthLabels.safeGet(tokenObj);
-  const bar = tokenObj.bars.bar1;
-  const barBounds = bar.getLocalBounds();
+  barSize ??= tokenObj.bars.bar1.getLocalBounds();
 
+  if (healthLabels._alignment === undefined) healthLabels.setAlignment();
+  if (align) healthLabels.setAlignment(align);
+
+  label.anchor.set(...healthLabels._alignment.anchor);
   label.x = tokenObj.w / 2;
-  label.y = tokenObj.h - (barBounds.height / 2);
+  label.y = healthLabels._alignment.y(tokenObj, barSize);
 }
 
 let _isForced = false;
 
 async function setVisibility(tokenObj, force) {
+  const label = healthLabels.safeGet(tokenObj);
+  if (!label) return;
+
   if (force != undefined) _isForced = force;
   if (_isForced && force === undefined) return;
 
   const shouldSee = force || tokenObj.hover;
   const perms = await permCheck();
   const relevantPerm = tokenObj.document.hasPlayerOwner ? perms.players : perms.others;
-  const label = healthLabels.safeGet(tokenObj);
   label.visibility = shouldSee && relevantPerm.canSee && relevantPerm.role > 0;
   label.renderable = shouldSee && relevantPerm.canSee && relevantPerm.role > 0;
 }
@@ -116,13 +142,24 @@ async function permCheck({ players, others } = {}) {
 }
 
 function updateHealthActors(actor, diff) {
-  if (diff?.system?.stamina) healthLabels.draw(actor);
+  if (diff?.system?.stamina) {
+    onAllCanvasTokens((tokenObj) => {
+      if (foundry.utils.equals(tokenObj.actor, actor))
+        draw(tokenObj);
+    })
+  }
 }
 
-export function resizeText(tokenObj, size) {
+healthLabels.resizeText = (tokenObj, size) => {
   healthLabels.safeGet(tokenObj).style.fontSize = size * uiScale.get();
 }
 
+healthLabels.setAlignment = (userAlignment) => {
+  userAlignment ??= settings.get("healthLabelAlignment");
+  const alignment = ALIGNMENT_CONFIG[userAlignment];
+  healthLabels._alignment = alignment;
+}
+
 function highlightAll(highlighted) {
-  canvas.tokens.placeables.forEach(obj => healthLabels.setVisibility(obj, highlighted))
+  onAllCanvasTokens(healthLabels.setVisibility, highlighted)
 }

@@ -32,7 +32,7 @@ async function anyEnabled() {
 function createOverlay(tokenObj) {
   healthbarTicks.create(tokenObj)
   healthLabels.create(tokenObj)
-  // tokenResource.create(tokenObj)
+  tokenResource.create(tokenObj)
 }
 
 async function checkFlags(tokenObj, flags) {
@@ -40,7 +40,7 @@ async function checkFlags(tokenObj, flags) {
 
   if (flags.refreshBars) {
     // rescale overlay
-    // tokenResource.rescale(tokenObj);
+    tokenResource.rescale(tokenObj);
 
     // rescale bar
     const barSize = tokenObj.bars.bar1.getLocalBounds();
@@ -55,7 +55,7 @@ async function checkFlags(tokenObj, flags) {
 
   if (flags.refreshVisibility) {
     healthbarTicks.setVisibility(tokenObj);
-    healthLabels.setVisibility(tokenObj);
+    // healthLabels.setVisibility(tokenObj);
   }
 }
 
@@ -67,6 +67,8 @@ export function makeOverlaySection({
   onDraw = () => { },
   onRescale = () => { },
   onDestroy,
+  onEnable = () => { },
+  onDisable = () => { },
   onDestroyAll = () => { },
   onSetVisibility = () => { },
   hooks = [],
@@ -84,18 +86,27 @@ export function makeOverlaySection({
     const attachedHooks = new Set();
 
     function attach() {
-      hooks.forEach(hook => {
-        attachedHooks.add(hook[2] ? Hooks.once(hook[0], hook[1]) : Hooks.on(hook[0], hook[1]));
+      hooks.forEach(([hookName, fn, isOnce]) => {
+        attachedHooks.add(
+          [
+            hookName,
+            isOnce ? Hooks.once(hookName, fn) : Hooks.on(hookName, fn)
+          ]
+        );
       }
       )
     }
 
     function detach() {
-      attachedHooks.forEach(hook => Hooks.off(hook))
+      attachedHooks.forEach(hook => {
+        Hooks.off(...hook)
+      })
     }
 
     return { attach, detach, list: hooks }
   })();
+
+  let _isCreated = false;
 
   return {
     name,
@@ -109,8 +120,8 @@ export function makeOverlaySection({
     async init() {
       if (!(await isEnabled())) return;
       // mod.log(`Initializing ${name}`)
-      onInit();
       hookHandler.attach();
+      onInit();
     },
 
     async forceInit() {
@@ -123,8 +134,10 @@ export function makeOverlaySection({
       if (!(await isEnabled())) return;
       // mod.log(`Creating ${name}`)
       onCreate(tokenObj);
-      onRescale(tokenObj);
       onDraw(tokenObj);
+      onRescale(tokenObj);
+
+      _isCreated = true;
     },
 
     async draw(tokenObj, ...args) {
@@ -137,8 +150,20 @@ export function makeOverlaySection({
       if (!(await isEnabled())) return;
       // mod.log(`Rescaling ${name}`)
 
-      onRescale(tokenObj, ...args);
       onDraw(tokenObj, ...args);
+      onRescale(tokenObj, ...args);
+    },
+
+    enable(user) {
+      if (!_isCreated) onAllCanvasTokens(this.create);
+      hookHandler.attach();
+      onEnable()
+    },
+
+    disable(user) {
+      hookHandler.detach();
+      onDisable()
+      onAllCanvasTokens(onSetVisibility, false, user)
     },
 
     destroy(tokenObj) {

@@ -104,4 +104,34 @@
     padding-bottom: 0.1rem;
     margin-bottom: calc(-0.5 * var(--spacer-16));
   }
+
+  &.hero-hud {
+    display: flex;
+    gap: 4px;
+
+    input {
+      flex: 1 1 100%;
+      padding: 0.2em;
+      border-color: var(--color);
+      box-shadow: 0 0 10px var(--color-shadow-dark);
+      height: var(--control-size);
+      line-height: var(--control-size);
+      border-radius: 8px;
+      font-size: var(--font-size-16);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .attribute:has(&) {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      height: var(--control-size);
+      align-content: end;
+    }
+  }
+}
+
+[data-category="ds-token-override"] a {
+  color: currentColor;
 }

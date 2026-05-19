@@ -1,13 +1,13 @@
 // used for settings, flags, and socket actions
 export const MODULE_ID = "ds-token-override";
 
-const ICON_GLYPH = {
+export const ICON_GLYPH = {
   "heart-pulse": "\uf21e",
   "chevrons-up": "\uf325",
   "sparkles": "\uf890",
   "boot": "\uf782",
   "anchor": "\uf13d",
-  "sword": "\uf71c",
+  "swords": "\uf71d",
   "default": "\uf128",
 };
 
@@ -21,12 +21,12 @@ export const ATTRIBUTES = {
     },
     surges: {
       path: "hero.surges",
-      icon: ICON_GLYPH["fa-chevrons-up"],
+      icon: ICON_GLYPH["chevrons-up"],
       color: "#cd8eee",
     },
     heroic_resource: {
       path: "hero.primary.value",
-      icon: ICON_GLYPH["fa-sparkles"],
+      icon: ICON_GLYPH["sparkles"],
       color: "#ffe493",
     },
   },
@@ -34,17 +34,17 @@ export const ATTRIBUTES = {
   npc: {
     speed: {
       path: "movement.value",
-      icon: ICON_GLYPH["fa-boot"],
+      icon: ICON_GLYPH["boot"],
       color: "#74c578ff",
     },
     stability: {
       path: "combat.stability",
-      icon: ICON_GLYPH["fa-anchor"],
+      icon: ICON_GLYPH["anchor"],
       color: "#e28c53ff",
     },
     freestrike: {
       path: "monster.freeStrike",
-      icon: ICON_GLYPH["fa-sword"],
+      icon: ICON_GLYPH["swords"],
       color: "#d04444ff",
     },
   },
@@ -53,17 +53,17 @@ export const ATTRIBUTES = {
     recoveries: {
       path: "recoveries.value",
       max: "recoveries.max",
-      icon: ICON_GLYPH["fa-heart-pulse"],
+      icon: ICON_GLYPH["heart-pulse"],
       color: "#85c4dc",
     },
     speed: {
       path: "movement.value",
-      icon: ICON_GLYPH["fa-boot"],
+      icon: ICON_GLYPH["boot"],
       color: "#74c578ff",
     },
     stability: {
       path: "combat.stability",
-      icon: ICON_GLYPH["fa-anchor"],
+      icon: ICON_GLYPH["anchor"],
       color: "#e28c53ff",
     },
   },

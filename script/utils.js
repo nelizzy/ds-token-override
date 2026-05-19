@@ -1,7 +1,7 @@
 import { MODULE_ID } from "./const.js";
 
 export const settings = (() => {
-  const get = async (key) => await game.settings.get(MODULE_ID, key);
+  const get = (key) => game.settings.get(MODULE_ID, key);
   const set = async (key, value) => await game.settings.set(MODULE_ID, key, value);
   return { get, set };
 })();

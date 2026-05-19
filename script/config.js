@@ -1,8 +1,8 @@
 import { MODULE_ID } from "./const.js";
 import { healthbarTicks } from "./tokenMods/healthbarTicks.js";
-import { healthLabels, resizeText } from "./tokenMods/healthLabels.js";
+import { healthLabels } from "./tokenMods/healthLabels.js";
 import { tokenResource } from "./tokenMods/tokenResource.js";
-import { mod } from "./utils.js";
+import { mod, onAllCanvasTokens } from "./utils.js";
 
 const config = {
   _TOKEN: {
@@ -16,11 +16,11 @@ const config = {
     type: Boolean,
     scope: "user",
     default: true,
-    onChange: (enabled) => {
+    onChange: (enabled, data, user) => {
       if (enabled) {
-        tokenResource.forceInit();
+        tokenResource.enable(user);
       } else {
-        tokenResource.destroyAll();
+        tokenResource.disable(user);
       }
     },
   },
@@ -36,26 +36,76 @@ const config = {
       max: 18,
     },
     onChange: (val) => {
-      // ...
+      onAllCanvasTokens(tokenResource.rescale)
     },
   },
 
-  _HEALTHBAR: {
-    label: "Healthbar",
+  _HEALTHTICKS: {
+    label: "Healthbar Ticks",
     divider: 2
   },
 
   enableHealthbarTicks: {
-    name: "Healthbar Ticks",
+    name: "Show Healthbar Ticks",
     type: Boolean,
     scope: "user",
     default: true,
-    onChange: (enabled) => {
+    onChange: function (enabled, data, user) {
+      mod.log(arguments);
       if (enabled) {
-        healthbarTicks.forceInit();
+        healthbarTicks.enable(user);
       } else {
-        healthbarTicks.destroyAll();
+        healthbarTicks.disable(user);
       }
+    },
+  },
+
+  tickColor: {
+    name: "Set Tick Color",
+    type: new foundry.data.fields.ColorField({
+      nullable: false,
+      required: true,
+    }),
+    scope: "user",
+    default: "#000",
+    onChange: (color) => {
+      onAllCanvasTokens(healthbarTicks.draw, { color })
+    },
+  },
+
+  _HEALTHLABEL: {
+    label: "Healthbar Label",
+    divider: 2
+  },
+  healthLabelAlignment: {
+    name: "Label Alignment",
+    type: new foundry.data.fields.StringField({
+      nullable: false,
+      required: true,
+      choices: {
+        "top": "Above Health Bar",
+        "middle": "Overlaying Health Bar",
+      },
+    }),
+    default: "top",
+    scope: "user",
+    onChange: (align) => {
+      onAllCanvasTokens(healthLabels.rescale, { align })
+    }
+  },
+
+  healthLabelSize: {
+    name: "Label Size",
+    type: Number,
+    scope: "user",
+    default: 18,
+    range: {
+      min: 12,
+      step: 1,
+      max: 24,
+    },
+    onChange: (val) => {
+      onAllCanvasTokens(healthLabels.resizeText, val)
     },
   },
 
@@ -99,24 +149,10 @@ const config = {
     },
   },
 
-  healthLabelSize: {
-    name: "Health Label Size",
-    type: Number,
-    scope: "user",
-    default: 18,
-    range: {
-      min: 12,
-      step: 1,
-      max: 24,
-    },
-    onChange: (val) => {
-      canvas.tokens.placeables.forEach(obj => resizeText(obj, val))
-    },
-  },
-
   _MISC: {
     label: "Miscellaneous Mods",
-    divider: 1
+    divider: 1,
+    gmOnly: true
   },
 
   enableTrackerMods: {
@@ -139,7 +175,7 @@ const config = {
 
   enableDamageLog: {
     name: "Damage Log",
-    hint: "Sends a message when token health changes.",
+    hint: "Sends a message with undo button when token health changes.",
     type: Boolean,
     scope: "world",
     default: false,
@@ -148,7 +184,7 @@ const config = {
 
   enableQuickFixes: {
     name: "Other Quick Fixes",
-    hint: "Misc. system fixes: see github for full list.",
+    hint: `Variety small scope fixes, see the [README on Github](https://github.com/nelizzy/ds-token-override/blob/main/README.md) for more details.`,
     type: Boolean,
     scope: "world",
     default: true,
@@ -161,7 +197,10 @@ const sections = (() => {
 
   const render = (container) => {
     list.forEach(opts => {
-      const { label, divider } = opts[0];
+
+      const { gmOnly, divider, label } = opts[0];
+      if (gmOnly && !game.user.isGM) return;
+
       const [settingTarget,] = opts[1];
 
       container.querySelector(`.form-group:has([id="settings-config-${MODULE_ID}.${settingTarget}"])`)
@@ -175,9 +214,30 @@ const sections = (() => {
 
 })();
 
+const markdown = (el) => {
+  const domWalk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+
+  while (domWalk.nextNode()) {
+    const node = domWalk.currentNode;
+
+    // looking for md links as [text](url)
+    const regex = /\[(.*?)\]\((.*?)\)/g;
+    if (!regex.test(node.nodeValue)) continue;
+
+    const span = document.createElement("span");
+    span.innerHTML = node.nodeValue.replace(regex, `<a href="$2">$1</a>`)
+
+    node.replaceWith(...span.childNodes);
+  }
+
+}
+
 export const init = () => {
   Hooks.on("renderSettingsConfig", (obj, el) => {
-    sections.render(el);
+    const tab = el.querySelector(`.tab[data-category="ds-token-override"]`);
+    sections.render(tab);
+    markdown(tab);
   })
 
   Object.entries(config).forEach(([key, opts], index, array) => {

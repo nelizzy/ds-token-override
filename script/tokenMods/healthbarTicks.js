@@ -3,7 +3,7 @@ import { makeOverlaySection } from "./_token.js";
 
 export const healthbarTicks = makeOverlaySection({
   name: "ds-ticks",
-  isEnabled: async () => await settings.get("enableHealthbarTicks"),
+  isEnabled: () => settings.get("enableHealthbarTicks"),
   onCreate: create,
   onDraw: draw,
   onSetVisibility: visibility,
@@ -24,7 +24,7 @@ function create(tokenObj) {
   tokenObj.bars._tickCount = count;
 };
 
-function draw(tokenObj, { barSize, setCount } = {}) {
+function draw(tokenObj, { barSize, setCount, color = settings.get("tickColor") } = {}) {
   const ticks = tokenObj.bars.getChildByName(healthbarTicks.name);
   barSize ??= tokenObj.bars.bar1.getLocalBounds();
 
@@ -32,7 +32,7 @@ function draw(tokenObj, { barSize, setCount } = {}) {
   const count = tokenObj.bars._tickCount;
 
   ticks.clear();
-  ticks.lineStyle({ color: "#000", width: 2 * uiScale.get() });
+  ticks.lineStyle({ color, width: 2 * uiScale.get() });
 
   const minionSpacing = barSize.width / count;
 
@@ -48,11 +48,15 @@ function draw(tokenObj, { barSize, setCount } = {}) {
   }
 };
 
-function visibility(tokenObj) {
+function visibility(tokenObj, force, user) {
   const ticks = healthbarTicks.safeGet(tokenObj);
   const bar = tokenObj.bars.bar1;
-  ticks.renderable = bar.renderable;
-  ticks.visibility = bar.visbility;
+  const forceVisibilityFor = user === game.user.id ? force : undefined;
+
+  if (ticks) {
+    ticks.renderable = forceVisibilityFor ?? bar.renderable;
+    ticks.visibility = forceVisibilityFor ?? bar.visbility;
+  }
 }
 
 /* ---------------------------- SPECIAL FUNCTION ---------------------------- */
