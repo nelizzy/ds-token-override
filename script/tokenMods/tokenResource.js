@@ -76,14 +76,18 @@ function rescale(tokenObj) {
 }
 
 function setVisibility(tokenObj, force, user) {
-  const shouldSee = tokenObj.document.hasPlayerOwner || tokenObj.document.isOwner;
   const container = tokenResource.safeGet(tokenObj);
-  const forceVisibilityFor = user === game.user.id ? force : undefined;
+  if (!container) return;
 
-  if (container) {
-    container.visibility = forceVisibilityFor ?? shouldSee;
-    container.renderable = forceVisibilityFor ?? shouldSee;
-  }
+  const forceVisibilityFor = user === game.user.id ? force : undefined;
+  const isPlayerOwned = tokenObj.document.hasPlayerOwner;
+  const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
+  const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled);
+  const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
+  const visible = forceVisibilityFor ?? shouldSee;
+
+  container.visible = visible;
+  container.renderable = visible;
 }
 
 function hasTrackedPath(type, diff) {
@@ -95,17 +99,23 @@ function hasTrackedPath(type, diff) {
   })
 }
 
+function getResourceByPath(tokenObj, path) {
+  const container = tokenResource.safeGet(tokenObj);
+  if (!container?._dsResource) return null;
+
+  return Array.from(container._dsResource).find(resource => resource.path === path) ?? null;
+}
+
 function onUpdate(actor, diff) {
   const path = hasTrackedPath(actor.type, diff)?.path;
+  if (!path) return;
 
-  if (path) {
-    onAllCanvasTokens((tokenObj) => {
-      if (foundry.utils.equals(tokenObj.actor, actor)) {
-        const resource = tokenResource.safeGet(tokenObj)._dsResource.find(x => x.path === path);
-        resource.update();
-      }
-    })
-  }
+  onAllCanvasTokens((tokenObj) => {
+    if (!foundry.utils.equals(tokenObj.actor, actor)) return;
+
+    const resource = getResourceByPath(tokenObj, path);
+    resource?.update();
+  })
 }
 
 function onRenderHUD(app, el, data, opts) {
