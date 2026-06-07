@@ -137,14 +137,27 @@ test("makeOverlaySection attaches each hook only once", async () => {
   section.enable("user-1");
   section.enable("user-1");
 
-  const onCalls = Hooks._calls.filter(([kind, name]) => kind === "on" && name === "updateActor");
+  let onCalls = Hooks._calls.filter(([kind, name]) => kind === "on" && name === "updateActor");
   assert.equal(onCalls.length, 1);
+
+  section.disable("user-1");
+
+  const offCalls = Hooks._calls.filter(([kind, name]) => kind === "off" && name === "updateActor");
+  assert.equal(offCalls.length, 1);
+  assert.equal(Hooks._listeners.size, 0);
+
+  section.enable("user-1");
+
+  onCalls = Hooks._calls.filter(([kind, name]) => kind === "on" && name === "updateActor");
+  assert.equal(onCalls.length, 2);
+  assert.equal(Hooks._listeners.size, 1);
 });
 
 test("makeOverlaySection creates one display object per token", async () => {
   installFoundryMocks();
   const { makeOverlaySection } = await import("../script/tokenMods/_token.js?create");
-  const token = makeToken();
+  const tokenA = makeToken();
+  const tokenB = makeToken();
   let createCalls = 0;
   let drawCalls = 0;
   let rescaleCalls = 0;
@@ -164,11 +177,14 @@ test("makeOverlaySection creates one display object per token", async () => {
     }
   });
 
-  await section.create(token);
-  await section.create(token);
+  await section.create(tokenA);
+  await section.create(tokenA);
+  await section.create(tokenB);
+  await section.create(tokenB);
 
-  assert.equal(createCalls, 1);
-  assert.equal(drawCalls, 2);
-  assert.equal(rescaleCalls, 2);
-  assert.equal(token.children.filter((child) => child.name === "test-overlay-create").length, 1);
+  assert.equal(createCalls, 2);
+  assert.equal(drawCalls, 4);
+  assert.equal(rescaleCalls, 4);
+  assert.equal(tokenA.children.filter((child) => child.name === "test-overlay-create").length, 1);
+  assert.equal(tokenB.children.filter((child) => child.name === "test-overlay-create").length, 1);
 });
