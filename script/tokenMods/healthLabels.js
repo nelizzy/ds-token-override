@@ -50,11 +50,19 @@ const ALIGNMENT_CONFIG = {
 
 /* ----------------------------- GENERIC HANDLER ---------------------------- */
 
+let _permissionCache = null;
+
+function clearPermissionCache() {
+  _permissionCache = null;
+}
+
+healthLabels.clearPermissionCache = clearPermissionCache;
 healthLabels._enabledStatus = undefined;
 
 async function isEnabled({ players, others } = {}) {
-  if (healthLabels._enabledStatus !== undefined) return healthLabels._enabledStatus;
-  const perms = await permCheck({ players, others });
+  const hasPermissionArgs = players !== undefined || others !== undefined;
+  if (!hasPermissionArgs && healthLabels._enabledStatus !== undefined) return healthLabels._enabledStatus;
+  const perms = permCheck({ players, others });
   return perms.both.canSee ?? perms.both.role !== 0
 }
 
@@ -64,6 +72,7 @@ function init() {
 
 function disable() {
   healthLabels._enabledStatus = false;
+  clearPermissionCache();
 }
 
 function create(tokenObj) {
@@ -113,7 +122,7 @@ function rescale(tokenObj, { align, barSize } = {}) {
 
 let _isForced = false;
 
-async function setVisibility(tokenObj, force) {
+function setVisibility(tokenObj, force) {
   const label = healthLabels.safeGet(tokenObj);
   if (!label) return;
 
@@ -121,7 +130,7 @@ async function setVisibility(tokenObj, force) {
   if (_isForced && force === undefined) return;
 
   const shouldSee = force || tokenObj.hover;
-  const perms = await permCheck();
+  const perms = permCheck();
   const relevantPerm = tokenObj.document.hasPlayerOwner ? perms.players : perms.others;
   label.visibility = shouldSee && relevantPerm.canSee && relevantPerm.role > 0;
   label.renderable = shouldSee && relevantPerm.canSee && relevantPerm.role > 0;
@@ -129,16 +138,23 @@ async function setVisibility(tokenObj, force) {
 
 /* ---------------------------- SPECIAL FUNCTION ---------------------------- */
 
-async function permCheck({ players, others } = {}) {
-  players ??= await settings.get("healthLabelPlayersMinimumPerm");
-  others ??= await settings.get("healthLabelOtherMinimumPerm");
+function permCheck({ players, others } = {}) {
+  const hasPlayersArg = players !== undefined;
+  const hasOthersArg = others !== undefined;
+  if (!hasPlayersArg && !hasOthersArg && _permissionCache) return _permissionCache;
+
+  players ??= settings.get("healthLabelPlayersMinimumPerm");
+  others ??= settings.get("healthLabelOtherMinimumPerm");
   const both = ((a, b) => (a === 0 ? b : b === 0 ? a : Math.min(a, b)))(players, others);
 
-  return {
+  const permissions = {
     players: perm(players),
     others: perm(others),
     both: perm(both)
-  }
+  };
+
+  if (players !== undefined && others !== undefined) _permissionCache = permissions;
+  return permissions;
 }
 
 function updateHealthActors(actor, diff) {

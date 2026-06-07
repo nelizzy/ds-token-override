@@ -120,6 +120,7 @@ const config = {
     default: CONST.USER_ROLES.PLAYER,
     scope: "world",
     onChange: async (players) => {
+      healthLabels.clearPermissionCache();
       if (await healthLabels.isEnabled({ players })) {
         if (healthLabels._enabledStatus) return;
         healthLabels.forceInit();
@@ -140,6 +141,7 @@ const config = {
     default: CONST.USER_ROLES.ASSISTANT,
     scope: "world",
     onChange: async (others) => {
+      healthLabels.clearPermissionCache();
       if (await healthLabels.isEnabled({ others })) {
         if (healthLabels._enabledStatus) return;
         healthLabels.forceInit();
