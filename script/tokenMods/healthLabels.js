@@ -10,6 +10,7 @@ export const healthLabels = makeOverlaySection({
   onDraw: draw,
   onRescale: rescale,
   // onDestroy: destroy,
+  onDisable: disable,
   onDestroyAll: disable,
   onSetVisibility: setVisibility,
   hooks: [
