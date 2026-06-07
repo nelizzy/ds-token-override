@@ -83,30 +83,28 @@ export function makeOverlaySection({
   const hookHandler = (() => {
     // expected hook entry: [hookName, function, isOnce]
 
-    const attachedHooks = new Set();
+    const attachedHooks = new Map();
 
     function attach() {
-      hooks.forEach(([hookName, fn, isOnce]) => {
-        attachedHooks.add(
-          [
-            hookName,
-            isOnce ? Hooks.once(hookName, fn) : Hooks.on(hookName, fn)
-          ]
-        );
-      }
-      )
+      hooks.forEach(([hookName, fn, isOnce], index) => {
+        if (attachedHooks.has(index)) return;
+
+        attachedHooks.set(index, {
+          hookName,
+          id: isOnce ? Hooks.once(hookName, fn) : Hooks.on(hookName, fn)
+        });
+      })
     }
 
     function detach() {
-      attachedHooks.forEach(hook => {
-        Hooks.off(...hook)
+      attachedHooks.forEach(({ hookName, id }) => {
+        Hooks.off(hookName, id)
       })
+      attachedHooks.clear();
     }
 
     return { attach, detach, list: hooks }
   })();
-
-  let _isCreated = false;
 
   return {
     name,
@@ -133,11 +131,9 @@ export function makeOverlaySection({
     async create(tokenObj) {
       if (!(await isEnabled())) return;
       // mod.log(`Creating ${name}`)
-      onCreate(tokenObj);
+      if (!safeGet(tokenObj)) onCreate(tokenObj);
       onDraw(tokenObj);
       onRescale(tokenObj);
-
-      _isCreated = true;
     },
 
     async draw(tokenObj, ...args) {
@@ -155,7 +151,7 @@ export function makeOverlaySection({
     },
 
     enable(user) {
-      if (!_isCreated) onAllCanvasTokens(this.create);
+      onAllCanvasTokens(this.create);
       hookHandler.attach();
       onEnable()
     },
