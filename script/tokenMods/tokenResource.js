@@ -132,7 +132,7 @@ function onRenderHUD(app, el, data, opts) {
   setVisibility(tokenObj);
   Hooks.once("closeDrawSteelTokenHUD", () => {
     tokenObj._dsResourceHudOpen = false;
-    setVisibility(tokenObj);
+    tokenResource.setVisibility(tokenObj);
   });
 
   bar.insertAdjacentElement("afterBegin", hud);
