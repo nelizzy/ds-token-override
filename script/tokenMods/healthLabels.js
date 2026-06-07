@@ -128,6 +128,11 @@ function setVisibility(tokenObj, force) {
   if (!label) return;
 
   if (force != undefined) _isForced = force;
+  if (force === false) {
+    label.visibility = false;
+    label.renderable = false;
+    return;
+  }
   if (_isForced && force === undefined) return;
 
   const shouldSee = force || tokenObj.hover;
