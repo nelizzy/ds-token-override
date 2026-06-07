@@ -212,16 +212,22 @@ async function trackHealthMinions(combatantGroup) {
 
   // healthbarTicks
   if (lastStamina.staminaMax !== staminaMax) {
-    minions.forEach(minion =>
-      healthbarTicks.draw(minion.token.object, { setCount: combatantGroup.system.minions.size })
-    )
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (!tokenObj) return;
+
+      healthbarTicks.draw(tokenObj, { setCount: combatantGroup.system.minions.size })
+    })
   }
 
   // healthLabels
   if (lastStamina.staminaMax !== staminaMax || lastStamina.staminaValue !== staminaValue) {
-    minions.forEach(minion =>
-      healthLabels.draw(minion.token.object, { staminaMax, staminaValue })
-    )
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (!tokenObj) return;
+
+      healthLabels.draw(tokenObj, { staminaMax, staminaValue })
+    })
 
   }
 
