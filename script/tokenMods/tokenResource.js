@@ -13,6 +13,8 @@ export const tokenResource = makeOverlaySection({
   onSetVisibility: setVisibility,
   hooks: [
     ["updateActor", onUpdate],
+    ["hoverToken", (token) => setVisibility(token)],
+    ["controlToken", (token) => setVisibility(token)],
     ["renderDrawSteelTokenHUD", onRenderHUD]
   ]
 })
@@ -79,7 +81,7 @@ function setVisibility(tokenObj, force, user) {
   const container = tokenResource.safeGet(tokenObj);
   if (!container) return;
 
-  const forceVisibilityFor = user === game.user.id ? force : undefined;
+  const forceVisibilityFor = user === undefined || user === game.user.id ? force : undefined;
   const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
   const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
   const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled);
@@ -120,9 +122,13 @@ function onUpdate(actor, diff) {
 
 function onRenderHUD(app, el, data, opts) {
   const tokenObj = app.object;
-  const hud = tokenResource.safeGet(tokenObj)._dsResource._extraHUD;
+  const hud = tokenResource.safeGet(tokenObj)?._dsResource?._extraHUD;
+  if (!hud) return;
 
-  el.querySelector(".attribute.bar2").insertAdjacentElement("afterBegin", hud);
+  const bar = el.querySelector(".attribute.bar2");
+  if (!bar) return;
+
+  bar.insertAdjacentElement("afterBegin", hud);
 }
 
 class Resource {
