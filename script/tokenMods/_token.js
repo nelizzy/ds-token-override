@@ -39,16 +39,24 @@ async function checkFlags(tokenObj, flags) {
   if (!await anyEnabled()) return;
 
   if (flags.refreshBars) {
-    // rescale overlay
-    tokenResource.rescale(tokenObj);
-
-    // rescale bar
     const barSize = tokenObj.bars.bar1.getLocalBounds();
+    const tokenWidth = tokenObj.w;
+    const tokenHeight = tokenObj.h;
 
-    if (tokenObj._barWidth === barSize.width && tokenObj._barHeight === barSize.height) return;
-    tokenObj._barWidth = barSize.width;
-    tokenObj._barHeight = barSize.height;
+    const sameGeometry =
+      tokenObj._dsBarWidth === barSize.width
+      && tokenObj._dsBarHeight === barSize.height
+      && tokenObj._dsTokenWidth === tokenWidth
+      && tokenObj._dsTokenHeight === tokenHeight;
 
+    if (sameGeometry) return;
+
+    tokenObj._dsBarWidth = barSize.width;
+    tokenObj._dsBarHeight = barSize.height;
+    tokenObj._dsTokenWidth = tokenWidth;
+    tokenObj._dsTokenHeight = tokenHeight;
+
+    tokenResource.position(tokenObj);
     healthLabels.rescale(tokenObj, { barSize });
     healthbarTicks.rescale(tokenObj, { barSize });
   }

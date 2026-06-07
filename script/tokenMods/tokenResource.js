@@ -17,6 +17,8 @@ export const tokenResource = makeOverlaySection({
   ]
 })
 
+tokenResource.position = position;
+
 // trying classes just to see?
 
 function create(tokenObj) {
@@ -49,11 +51,28 @@ function draw(tokenObj) {
   setVisibility(tokenObj);
 }
 
+function position(tokenObj) {
+  const container = tokenResource.safeGet(tokenObj);
+  if (!container) return;
+
+  const radius = settings.get("tokenResourceSize") * uiScale.get();
+  const count = container._dsResource?.size ?? 0;
+  const gap = Math.min(5, radius * 0.4);
+  const height = count > 0 ? (radius * 2 * count) + (gap * (count - 1)) : 0;
+
+  container.x = tokenObj.w - radius;
+  container.y = (tokenObj.h - height) / 2 + radius;
+}
+
 function rescale(tokenObj) {
   const container = tokenResource.safeGet(tokenObj);
-  const bounds = container.getLocalBounds();
-  container.x = tokenObj.w - (bounds.width / 3);
-  container.y = (tokenObj.h / 2) - (bounds.height / 3);
+  if (!container) return;
+
+  container._dsResource.forEach(circle => {
+    circle.draw();
+  });
+
+  position(tokenObj);
 }
 
 function setVisibility(tokenObj, force, user) {
@@ -239,4 +258,3 @@ class Label {
     this.item.text = text;
   }
 }
-
