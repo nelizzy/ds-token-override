@@ -80,7 +80,7 @@ function setVisibility(tokenObj, force, user) {
   if (!container) return;
 
   const forceVisibilityFor = user === game.user.id ? force : undefined;
-  const isPlayerOwned = tokenObj.document.hasPlayerOwner;
+  const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
   const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
   const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled);
   const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
