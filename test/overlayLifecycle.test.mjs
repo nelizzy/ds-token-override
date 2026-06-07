@@ -123,6 +123,10 @@ function makeToken() {
   };
 }
 
+function flushAsyncWork() {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
 test("makeOverlaySection attaches each hook only once", async () => {
   installFoundryMocks();
   const { makeOverlaySection } = await import("../script/tokenMods/_token.js?hooks");
@@ -187,4 +191,36 @@ test("makeOverlaySection creates one display object per token", async () => {
   assert.equal(rescaleCalls, 4);
   assert.equal(tokenA.children.filter((child) => child.name === "test-overlay-create").length, 1);
   assert.equal(tokenB.children.filter((child) => child.name === "test-overlay-create").length, 1);
+});
+
+test("makeOverlaySection forceInit does not register global token hooks", async () => {
+  installFoundryMocks();
+  const { makeOverlaySection } = await import("../script/tokenMods/_token.js?forceInit");
+  const token = makeToken();
+  canvas.tokens.placeables = [token];
+  let createCalls = 0;
+
+  const section = makeOverlaySection({
+    name: "test-overlay-force",
+    isEnabled: () => true,
+    onCreate(tokenObj) {
+      createCalls += 1;
+      tokenObj.addChild({ name: "test-overlay-force", destroy() {} });
+    },
+    hooks: [["updateActor", () => {}]]
+  });
+
+  await section.forceInit();
+  await section.forceInit();
+  await flushAsyncWork();
+
+  const globalHookCalls = Hooks._calls.filter(([, name]) =>
+    ["drawToken", "refreshToken", "updateCombatantGroup"].includes(name)
+  );
+  const sectionHookCalls = Hooks._calls.filter(([kind, name]) => kind === "on" && name === "updateActor");
+
+  assert.equal(globalHookCalls.length, 0);
+  assert.equal(sectionHookCalls.length, 1);
+  assert.equal(createCalls, 1);
+  assert.equal(token.children.filter((child) => child.name === "test-overlay-force").length, 1);
 });

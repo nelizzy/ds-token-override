@@ -132,7 +132,7 @@ export function makeOverlaySection({
 
     async forceInit() {
       // mod.log(`Force Initializing ${name}`)
-      init();
+      await this.init();
       onAllCanvasTokens(this.create);
     },
 
