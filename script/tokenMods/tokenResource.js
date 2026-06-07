@@ -1,5 +1,5 @@
 import { ATTRIBUTES, ICON_GLYPH } from "../const.js";
-import { blendColors, mod, settings, uiScale, PreciseText, onAllCanvasTokens } from "../utils.js";
+import { blendColors, settings, uiScale, PreciseText, onAllCanvasTokens } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const tokenResource = makeOverlaySection({

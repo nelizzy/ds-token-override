@@ -1,7 +1,7 @@
 import { healthbarTicks } from "./healthbarTicks.js";
 import { healthLabels } from "./healthLabels.js";
 import { tokenResource } from "./tokenResource.js";
-import { flags, mod, onAllCanvasTokens } from "../utils.js";
+import { flags, onAllCanvasTokens } from "../utils.js";
 import { MODULE_ID } from "../const.js";
 
 export const init = async () => {
@@ -125,20 +125,17 @@ export function makeOverlaySection({
 
     async init() {
       if (!(await isEnabled())) return;
-      // mod.log(`Initializing ${name}`)
       hookHandler.attach();
       onInit();
     },
 
     async forceInit() {
-      // mod.log(`Force Initializing ${name}`)
       await this.init();
       onAllCanvasTokens(this.create);
     },
 
     async create(tokenObj) {
       if (!(await isEnabled())) return;
-      // mod.log(`Creating ${name}`)
       if (!safeGet(tokenObj)) onCreate(tokenObj);
       onDraw(tokenObj);
       onRescale(tokenObj);
@@ -146,13 +143,11 @@ export function makeOverlaySection({
 
     async draw(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Drawing ${name}`)
       onDraw(tokenObj, ...args);
     },
 
     async rescale(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Rescaling ${name}`)
 
       onDraw(tokenObj, ...args);
       onRescale(tokenObj, ...args);
@@ -176,20 +171,15 @@ export function makeOverlaySection({
 
       if (onDestroy) onDestroy(tokenObj, displayObject);
       else displayObject.destroy();
-
-      // mod.log(`Destroying ${name} on ${tokenObj.name}`, tokenObj);
     },
 
     destroyAll() {
-      mod.group(`Destroying ${name}`);
       onAllCanvasTokens(this.destroy)
       onDestroyAll();
-      mod.groupEnd()
     },
 
     async setVisibility(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Setting visibility on ${name}`)
 
       onSetVisibility(tokenObj, ...args);
     }

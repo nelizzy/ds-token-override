@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../const.js";
-import { mod, onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
+import { onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const healthLabels = makeOverlaySection({
