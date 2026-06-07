@@ -21,13 +21,19 @@ function minionHealthbarFix() {
   // fix health updates
   (() => {
     const old = CONFIG.Combatant.documentClass.prototype.refreshCombatant;
-    CONFIG.Combatant.documentClass.prototype.refreshCombatant = function () {
-      if (this.actor.system.combatGroups.size === 1) {
+    CONFIG.Combatant.documentClass.prototype.refreshCombatant = function (...args) {
+      const hasMinionGroup = this.actor.system.combatGroups.size === 1;
+      const previousBarValue = this.token?.object?.bars?.bar1?.value;
+
+      old.call(this, ...args);
+
+      const nextBarValue = this.token?.object?.bars?.bar1?.value;
+      const barChanged = previousBarValue !== nextBarValue;
+
+      if (hasMinionGroup && barChanged) {
         this.token?._prepareBars();
         this.token?.object?.animate(this.token?.object?._getAnimationData());
       }
-
-      old.call(this);
     }
   })();
 }

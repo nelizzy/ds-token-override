@@ -203,7 +203,7 @@ async function trackHealthMinions(combatantGroup) {
   if (!(await healthbarTicks.isEnabled() || await healthLabels.isEnabled())) return;
 
   const grpFlags = flags(combatantGroup);
-  const lastStamina = grpFlags.get("lastStamina");
+  const lastStamina = await grpFlags.get("lastStamina") ?? {};
   const minions = combatantGroup?.system?.minions;
 
   if (!minions) return;
