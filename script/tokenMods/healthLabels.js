@@ -123,12 +123,12 @@ function rescale(tokenObj, { align, barSize } = {}) {
 
 let _isForced = false;
 
-function setVisibility(tokenObj, force) {
+function setVisibility(tokenObj, force, user) {
   const label = healthLabels.safeGet(tokenObj);
   if (!label) return;
 
   if (force != undefined) _isForced = force;
-  if (force === false) {
+  if (force === false && user !== undefined) {
     label.visibility = false;
     label.renderable = false;
     return;
