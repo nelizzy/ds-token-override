@@ -84,7 +84,7 @@ function setVisibility(tokenObj, force, user) {
   const forceVisibilityFor = user === undefined || user === game.user.id ? force : undefined;
   const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
   const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
-  const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled);
+  const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled || tokenObj._dsResourceHudOpen);
   const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
   const visible = forceVisibilityFor ?? shouldSee;
 
@@ -127,6 +127,13 @@ function onRenderHUD(app, el, data, opts) {
 
   const bar = el.querySelector(".attribute.bar2");
   if (!bar) return;
+
+  tokenObj._dsResourceHudOpen = true;
+  setVisibility(tokenObj);
+  Hooks.once("closeDrawSteelTokenHUD", () => {
+    tokenObj._dsResourceHudOpen = false;
+    setVisibility(tokenObj);
+  });
 
   bar.insertAdjacentElement("afterBegin", hud);
 }
