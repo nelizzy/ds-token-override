@@ -49,16 +49,16 @@ async function checkFlags(tokenObj, flags) {
       && tokenObj._dsTokenWidth === tokenWidth
       && tokenObj._dsTokenHeight === tokenHeight;
 
-    if (sameGeometry) return;
+    if (!sameGeometry) {
+      tokenObj._dsBarWidth = barSize.width;
+      tokenObj._dsBarHeight = barSize.height;
+      tokenObj._dsTokenWidth = tokenWidth;
+      tokenObj._dsTokenHeight = tokenHeight;
 
-    tokenObj._dsBarWidth = barSize.width;
-    tokenObj._dsBarHeight = barSize.height;
-    tokenObj._dsTokenWidth = tokenWidth;
-    tokenObj._dsTokenHeight = tokenHeight;
-
-    tokenResource.position(tokenObj);
-    healthLabels.rescale(tokenObj, { barSize });
-    healthbarTicks.rescale(tokenObj, { barSize });
+      tokenResource.position(tokenObj);
+      healthLabels.rescale(tokenObj, { barSize });
+      healthbarTicks.rescale(tokenObj, { barSize });
+    }
   }
 
   if (flags.refreshVisibility) {
