@@ -189,7 +189,7 @@ export function makeOverlaySection({
 /* ------------------------------ SHARED HOOKS ------------------------------ */
 // woulod be used for healthLabels and healthbarTicks, so brought out here
 
-async function trackHealthMinions(combatantGroup) {
+async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   if (!(await healthbarTicks.isEnabled() || await healthLabels.isEnabled())) return;
 
   const grpFlags = flags(combatantGroup);
@@ -222,5 +222,5 @@ async function trackHealthMinions(combatantGroup) {
   }
 
   // new stmaina recorded
-  return grpFlags.set("lastStamina", { staminaMax, staminaValue });
+    if (game.userId === evtUserId && combatantGroup.isOwner) grpFlags.set("lastStamina", { staminaMax, staminaValue });
 }
