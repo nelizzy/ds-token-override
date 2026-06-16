@@ -13,11 +13,13 @@ function override() {
   const fn = CONFIG.CombatantGroup.documentClass.prototype.updateTokens;
 
   CONFIG.CombatantGroup.documentClass.prototype.updateTokens = async function (...args) {
-    fn.apply(this, args);
+    const result = await fn.apply(this, args);
 
-    if (["ring.colors.ring", "texture.tint"].includes(args[0])) {
+    if (game.user.isGM && ["ring.colors.ring", "texture.tint"].includes(args[0])) {
       await this.setFlag("ds-token-override", "groupColor", args[1]);
     }
+
+    return result;
   };
 }
 

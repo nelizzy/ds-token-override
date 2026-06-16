@@ -199,28 +199,34 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   if (!(await healthbarTicks.isEnabled() || await healthLabels.isEnabled())) return;
 
   const grpFlags = flags(combatantGroup);
-  const lastStamina = grpFlags.get("lastStamina");
+  const lastStamina = await grpFlags.get("lastStamina") ?? {};
   const minions = combatantGroup?.system?.minions;
 
   if (!minions) return;
 
   const { staminaMax, staminaValue } = combatantGroup.system;
+  const staminaMaxChanged = lastStamina.staminaMax !== staminaMax;
+  const staminaValueChanged = lastStamina.staminaValue !== staminaValue;
 
   // healthbarTicks
-  if (lastStamina.staminaMax !== staminaMax) {
-    minions.forEach(minion =>
-      healthbarTicks.draw(minion.token.object, { setCount: combatantGroup.system.minions.size })
-    )
+  if (staminaMaxChanged) {
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (tokenObj) healthbarTicks.draw(tokenObj, { setCount: combatantGroup.system.minions.size })
+    })
   }
 
   // healthLabels
-  if (lastStamina.staminaMax !== staminaMax || lastStamina.staminaValue !== staminaValue) {
-    minions.forEach(minion =>
-      healthLabels.draw(minion.token.object, { staminaMax, staminaValue })
-    )
+  if (staminaMaxChanged || staminaValueChanged) {
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (tokenObj) healthLabels.draw(tokenObj, { staminaMax, staminaValue })
+    })
 
   }
 
   // new stmaina recorded
-    if (game.userId === evtUserId && combatantGroup.isOwner) grpFlags.set("lastStamina", { staminaMax, staminaValue });
+  if (game.userId === evtUserId && combatantGroup.isOwner && (staminaMaxChanged || staminaValueChanged)) {
+    return grpFlags.set("lastStamina", { staminaMax, staminaValue });
+  }
 }
