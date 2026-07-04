@@ -2,7 +2,7 @@ import { MODULE_ID } from "./const.js";
 import { healthbarTicks } from "./tokenMods/healthbarTicks.js";
 import { healthLabels } from "./tokenMods/healthLabels.js";
 import { tokenResource } from "./tokenMods/tokenResource.js";
-import { mod, onAllCanvasTokens } from "./utils.js";
+import { onAllCanvasTokens } from "./utils.js";
 
 const config = {
   _TOKEN: {
@@ -51,7 +51,6 @@ const config = {
     scope: "user",
     default: true,
     onChange: function (enabled, data, user) {
-      mod.log(arguments);
       if (enabled) {
         healthbarTicks.enable(user);
       } else {
@@ -120,6 +119,7 @@ const config = {
     default: CONST.USER_ROLES.PLAYER,
     scope: "world",
     onChange: async (players) => {
+      healthLabels.clearPermissionCache();
       if (await healthLabels.isEnabled({ players })) {
         if (healthLabels._enabledStatus) return;
         healthLabels.forceInit();
@@ -140,6 +140,7 @@ const config = {
     default: CONST.USER_ROLES.ASSISTANT,
     scope: "world",
     onChange: async (others) => {
+      healthLabels.clearPermissionCache();
       if (await healthLabels.isEnabled({ others })) {
         if (healthLabels._enabledStatus) return;
         healthLabels.forceInit();

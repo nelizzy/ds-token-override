@@ -8,10 +8,32 @@ export const init = () => {
 
 // delete when fixed in base foundry!!
 function minionHealthbarFix() {
+  function getSoleMinionGroup(actor) {
+    const system = actor?.system;
+    const combatGroups = system?.combatGroups;
+
+    if (combatGroups) {
+      if (combatGroups.size !== 1) return null;
+
+      const values = combatGroups.values?.();
+      return system.combatGroup ?? values?.next?.().value ?? null;
+    }
+
+    return system?.combatGroup ?? null;
+  }
+
+  function getMinionGroupBarState(actor) {
+    const groupSystem = getSoleMinionGroup(actor)?.system;
+    const { staminaValue, staminaMax } = groupSystem ?? {};
+    if (staminaValue == null || staminaMax == null) return null;
+
+    return `${staminaValue}:${staminaMax}`;
+  }
+
   // fix initial load
   Hooks.on("drawTokenLayer", (tokenLayer) => {
     tokenLayer.ownedTokens.forEach(token => {
-      if (token?.actor?.system?.combatGroups?.size === 1) {
+      if (getMinionGroupBarState(token?.actor)) {
         token.document._prepareBars();
         token.animate(token._getAnimationData(), { duration: 0 });
       }
@@ -21,13 +43,17 @@ function minionHealthbarFix() {
   // fix health updates
   (() => {
     const old = CONFIG.Combatant.documentClass.prototype.refreshCombatant;
-    CONFIG.Combatant.documentClass.prototype.refreshCombatant = function () {
-      if (this.actor.system.combatGroups.size === 1) {
+    CONFIG.Combatant.documentClass.prototype.refreshCombatant = function (...args) {
+      const barState = getMinionGroupBarState(this.actor);
+      const barChanged = barState && this._dsLastMinionBarState !== barState;
+
+      if (barChanged) {
+        this._dsLastMinionBarState = barState;
         this.token?._prepareBars();
         this.token?.object?.animate(this.token?.object?._getAnimationData());
       }
 
-      old.call(this);
+      return old.call(this, ...args);
     }
   })();
 }

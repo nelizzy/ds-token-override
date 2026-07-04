@@ -1,7 +1,7 @@
 import { healthbarTicks } from "./healthbarTicks.js";
 import { healthLabels } from "./healthLabels.js";
 import { tokenResource } from "./tokenResource.js";
-import { flags, mod, onAllCanvasTokens } from "../utils.js";
+import { flags, onAllCanvasTokens } from "../utils.js";
 import { MODULE_ID } from "../const.js";
 
 export const init = async () => {
@@ -39,18 +39,26 @@ async function checkFlags(tokenObj, flags) {
   if (!await anyEnabled()) return;
 
   if (flags.refreshBars) {
-    // rescale overlay
-    tokenResource.rescale(tokenObj);
-
-    // rescale bar
     const barSize = tokenObj.bars.bar1.getLocalBounds();
+    const tokenWidth = tokenObj.w;
+    const tokenHeight = tokenObj.h;
 
-    if (tokenObj._barWidth === barSize.width && tokenObj._barHeight === barSize.height) return;
-    tokenObj._barWidth = barSize.width;
-    tokenObj._barHeight = barSize.height;
+    const sameGeometry =
+      tokenObj._dsBarWidth === barSize.width
+      && tokenObj._dsBarHeight === barSize.height
+      && tokenObj._dsTokenWidth === tokenWidth
+      && tokenObj._dsTokenHeight === tokenHeight;
 
-    healthLabels.rescale(tokenObj, { barSize });
-    healthbarTicks.rescale(tokenObj, { barSize });
+    if (!sameGeometry) {
+      tokenObj._dsBarWidth = barSize.width;
+      tokenObj._dsBarHeight = barSize.height;
+      tokenObj._dsTokenWidth = tokenWidth;
+      tokenObj._dsTokenHeight = tokenHeight;
+
+      tokenResource.position(tokenObj);
+      healthLabels.rescale(tokenObj, { barSize });
+      healthbarTicks.rescale(tokenObj, { barSize });
+    }
   }
 
   if (flags.refreshVisibility) {
@@ -83,30 +91,28 @@ export function makeOverlaySection({
   const hookHandler = (() => {
     // expected hook entry: [hookName, function, isOnce]
 
-    const attachedHooks = new Set();
+    const attachedHooks = new Map();
 
     function attach() {
-      hooks.forEach(([hookName, fn, isOnce]) => {
-        attachedHooks.add(
-          [
-            hookName,
-            isOnce ? Hooks.once(hookName, fn) : Hooks.on(hookName, fn)
-          ]
-        );
-      }
-      )
+      hooks.forEach(([hookName, fn, isOnce], index) => {
+        if (attachedHooks.has(index)) return;
+
+        attachedHooks.set(index, {
+          hookName,
+          id: isOnce ? Hooks.once(hookName, fn) : Hooks.on(hookName, fn)
+        });
+      })
     }
 
     function detach() {
-      attachedHooks.forEach(hook => {
-        Hooks.off(...hook)
+      attachedHooks.forEach(({ hookName, id }) => {
+        Hooks.off(hookName, id)
       })
+      attachedHooks.clear();
     }
 
     return { attach, detach, list: hooks }
   })();
-
-  let _isCreated = false;
 
   return {
     name,
@@ -119,43 +125,36 @@ export function makeOverlaySection({
 
     async init() {
       if (!(await isEnabled())) return;
-      // mod.log(`Initializing ${name}`)
       hookHandler.attach();
       onInit();
     },
 
     async forceInit() {
-      // mod.log(`Force Initializing ${name}`)
-      init();
+      await this.init();
       onAllCanvasTokens(this.create);
     },
 
     async create(tokenObj) {
       if (!(await isEnabled())) return;
-      // mod.log(`Creating ${name}`)
-      onCreate(tokenObj);
+      if (!safeGet(tokenObj)) onCreate(tokenObj);
       onDraw(tokenObj);
       onRescale(tokenObj);
-
-      _isCreated = true;
     },
 
     async draw(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Drawing ${name}`)
       onDraw(tokenObj, ...args);
     },
 
     async rescale(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Rescaling ${name}`)
 
       onDraw(tokenObj, ...args);
       onRescale(tokenObj, ...args);
     },
 
     enable(user) {
-      if (!_isCreated) onAllCanvasTokens(this.create);
+      onAllCanvasTokens(this.create);
       hookHandler.attach();
       onEnable()
     },
@@ -172,20 +171,15 @@ export function makeOverlaySection({
 
       if (onDestroy) onDestroy(tokenObj, displayObject);
       else displayObject.destroy();
-
-      // mod.log(`Destroying ${name} on ${tokenObj.name}`, tokenObj);
     },
 
     destroyAll() {
-      mod.group(`Destroying ${name}`);
       onAllCanvasTokens(this.destroy)
       onDestroyAll();
-      mod.groupEnd()
     },
 
     async setVisibility(tokenObj, ...args) {
       if (!(await isEnabled())) return;
-      // mod.log(`Setting visibility on ${name}`)
 
       onSetVisibility(tokenObj, ...args);
     }
@@ -199,7 +193,7 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   if (!(await healthbarTicks.isEnabled() || await healthLabels.isEnabled())) return;
 
   const grpFlags = flags(combatantGroup);
-  const lastStamina = grpFlags.get("lastStamina");
+  const lastStamina = await grpFlags.get("lastStamina") ?? {};
   const minions = combatantGroup?.system?.minions;
 
   if (!minions) return;
@@ -208,16 +202,22 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
 
   // healthbarTicks
   if (lastStamina.staminaMax !== staminaMax) {
-    minions.forEach(minion =>
-      healthbarTicks.draw(minion.token.object, { setCount: combatantGroup.system.minions.size })
-    )
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (!tokenObj) return;
+
+      healthbarTicks.draw(tokenObj, { setCount: combatantGroup.system.minions.size })
+    })
   }
 
   // healthLabels
   if (lastStamina.staminaMax !== staminaMax || lastStamina.staminaValue !== staminaValue) {
-    minions.forEach(minion =>
-      healthLabels.draw(minion.token.object, { staminaMax, staminaValue })
-    )
+    minions.forEach(minion => {
+      const tokenObj = minion.token?.object;
+      if (!tokenObj) return;
+
+      healthLabels.draw(tokenObj, { staminaMax, staminaValue })
+    })
 
   }
 

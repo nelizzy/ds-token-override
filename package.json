@@ -4,10 +4,11 @@
   "description": "Provide an intuitive overlay for Foundry Draw Steel tokens",
   "main": "script/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check:syntax": "find script -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "test": "node --test test/*.test.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "module"
 }
