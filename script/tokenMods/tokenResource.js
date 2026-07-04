@@ -1,5 +1,5 @@
 import { ATTRIBUTES, ICON_GLYPH } from "../const.js";
-import { blendColors, mod, settings, uiScale, PreciseText, onAllCanvasTokens } from "../utils.js";
+import { blendColors, settings, uiScale, PreciseText, onAllCanvasTokens } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const tokenResource = makeOverlaySection({
@@ -13,9 +13,13 @@ export const tokenResource = makeOverlaySection({
   onSetVisibility: setVisibility,
   hooks: [
     ["updateActor", onUpdate],
+    ["hoverToken", (token) => setVisibility(token)],
+    ["controlToken", (token) => setVisibility(token)],
     ["renderDrawSteelTokenHUD", onRenderHUD]
   ]
 })
+
+tokenResource.position = position;
 
 // trying classes just to see?
 
@@ -49,22 +53,43 @@ function draw(tokenObj) {
   setVisibility(tokenObj);
 }
 
+function position(tokenObj) {
+  const container = tokenResource.safeGet(tokenObj);
+  if (!container) return;
+
+  const radius = settings.get("tokenResourceSize") * uiScale.get();
+  const count = container._dsResource?.size ?? 0;
+  const gap = Math.min(5, radius * 0.4);
+  const height = count > 0 ? (radius * 2 * count) + (gap * (count - 1)) : 0;
+
+  container.x = tokenObj.w - radius;
+  container.y = (tokenObj.h - height) / 2 + radius;
+}
+
 function rescale(tokenObj) {
   const container = tokenResource.safeGet(tokenObj);
-  const bounds = container.getLocalBounds();
-  container.x = tokenObj.w - (bounds.width / 3);
-  container.y = (tokenObj.h / 2) - (bounds.height / 3);
+  if (!container) return;
+
+  container._dsResource.forEach(circle => {
+    circle.draw();
+  });
+
+  position(tokenObj);
 }
 
 function setVisibility(tokenObj, force, user) {
-  const shouldSee = tokenObj.document.hasPlayerOwner || tokenObj.document.isOwner;
   const container = tokenResource.safeGet(tokenObj);
-  const forceVisibilityFor = user === game.user.id ? force : undefined;
+  if (!container) return;
 
-  if (container) {
-    container.visibility = forceVisibilityFor ?? shouldSee;
-    container.renderable = forceVisibilityFor ?? shouldSee;
-  }
+  const forceVisibilityFor = user === undefined || user === game.user.id ? force : undefined;
+  const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
+  const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
+  const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled || tokenObj._dsResourceHudOpen);
+  const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
+  const visible = forceVisibilityFor ?? shouldSee;
+
+  container.visible = visible;
+  container.renderable = visible;
 }
 
 function hasTrackedPath(type, diff) {
@@ -76,24 +101,41 @@ function hasTrackedPath(type, diff) {
   })
 }
 
+function getResourceByPath(tokenObj, path) {
+  const container = tokenResource.safeGet(tokenObj);
+  if (!container?._dsResource) return null;
+
+  return Array.from(container._dsResource).find(resource => resource.path === path) ?? null;
+}
+
 function onUpdate(actor, diff) {
   const path = hasTrackedPath(actor.type, diff)?.path;
+  if (!path) return;
 
-  if (path) {
-    onAllCanvasTokens((tokenObj) => {
-      if (foundry.utils.equals(tokenObj.actor, actor)) {
-        const resource = tokenResource.safeGet(tokenObj)._dsResource.find(x => x.path === path);
-        resource.update();
-      }
-    })
-  }
+  onAllCanvasTokens((tokenObj) => {
+    if (!foundry.utils.equals(tokenObj.actor, actor)) return;
+
+    const resource = getResourceByPath(tokenObj, path);
+    resource?.update();
+  })
 }
 
 function onRenderHUD(app, el, data, opts) {
   const tokenObj = app.object;
-  const hud = tokenResource.safeGet(tokenObj)._dsResource._extraHUD;
+  const hud = tokenResource.safeGet(tokenObj)?._dsResource?._extraHUD;
+  if (!hud) return;
 
-  el.querySelector(".attribute.bar2").insertAdjacentElement("afterBegin", hud);
+  const bar = el.querySelector(".attribute.bar2");
+  if (!bar) return;
+
+  tokenObj._dsResourceHudOpen = true;
+  setVisibility(tokenObj);
+  Hooks.once("closeDrawSteelTokenHUD", () => {
+    tokenObj._dsResourceHudOpen = false;
+    tokenResource.setVisibility(tokenObj);
+  });
+
+  bar.insertAdjacentElement("afterBegin", hud);
 }
 
 class Resource {
@@ -239,4 +281,3 @@ class Label {
     this.item.text = text;
   }
 }
-

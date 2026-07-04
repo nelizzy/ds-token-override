@@ -13,7 +13,6 @@ export const socket = (() => {
   const list = new Map();
 
   const register = (action, callback) => {
-    mod.log(`SOCKET: Registered ${action}`)
     list.set(action, callback);
   };
 
