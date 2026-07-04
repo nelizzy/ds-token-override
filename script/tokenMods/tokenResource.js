@@ -45,6 +45,8 @@ function create(tokenObj) {
 function draw(tokenObj) {
   const container = tokenResource.safeGet(tokenObj);
 
+  if (!container?._dsResource) return;
+
   container._dsResource.forEach(circle => {
     circle.draw();
     circle.update();
@@ -69,6 +71,9 @@ function position(tokenObj) {
 function rescale(tokenObj) {
   const container = tokenResource.safeGet(tokenObj);
   if (!container) return;
+
+  if (!container?._dsResource) return;
+
 
   container._dsResource.forEach(circle => {
     circle.draw();
