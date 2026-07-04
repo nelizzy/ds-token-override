@@ -199,6 +199,8 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   if (!minions) return;
 
   const { staminaMax, staminaValue } = combatantGroup.system;
+  const staminaMaxChanged = lastStamina.staminaMax !== staminaMax;
+  const staminaValueChanged = lastStamina.staminaValue !== staminaValue;
 
   // healthbarTicks
   if (lastStamina.staminaMax !== staminaMax) {
@@ -222,5 +224,7 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   }
 
   // new stmaina recorded
-    if (game.userId === evtUserId && combatantGroup.isOwner) grpFlags.set("lastStamina", { staminaMax, staminaValue });
+  if (game.userId === evtUserId && combatantGroup.isOwner && (staminaMaxChanged || staminaValueChanged)) {
+    return grpFlags.set("lastStamina", { staminaMax, staminaValue });
+  }
 }
