@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../const.js";
-import { onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
+import { mod, onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const healthLabels = makeOverlaySection({
@@ -69,6 +69,7 @@ async function isEnabled({ players, others } = {}) {
 
 function init() {
   healthLabels._enabledStatus = true;
+  clearPermissionCache();
 }
 
 function disable() {
@@ -77,6 +78,7 @@ function disable() {
 }
 
 function create(tokenObj) {
+
   if (!tokenObj) return;
 
   const label = new PreciseText("", {
@@ -126,6 +128,7 @@ let _isForced = false;
 
 function setVisibility(tokenObj, force, user) {
   const label = healthLabels.safeGet(tokenObj);
+
   if (!label) return;
 
   if (force != undefined) _isForced = force;
@@ -134,7 +137,10 @@ function setVisibility(tokenObj, force, user) {
     label.renderable = false;
     return;
   }
+
+
   if (_isForced && force === undefined) return;
+
 
   const shouldSee = force || tokenObj.hover;
   const perms = permCheck();
