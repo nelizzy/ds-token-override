@@ -1,5 +1,5 @@
 import { ATTRIBUTES, ICON_GLYPH } from "../const.js";
-import { blendColors, settings, uiScale, PreciseText, onAllCanvasTokens } from "../utils.js";
+import { blendColors, settings, uiScale, PreciseText, onAllCanvasTokens, compare } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const tokenResource = makeOverlaySection({
@@ -126,7 +126,7 @@ function onUpdate(actor, diff) {
   if (!path) return;
 
   onAllCanvasTokens((tokenObj) => {
-    if (!foundry.utils.equals(tokenObj.actor, actor)) return;
+    if (!compare(tokenObj.actor, actor)) return;
 
     const resource = getResourceByPath(tokenObj, path);
     resource?.update();

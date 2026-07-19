@@ -24,6 +24,19 @@ export const mod = ((prefix) => ({
 
 export const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 
+// v13 helper
+export const compare = (x, y) => {
+  if (typeof foundry.utils.equals === 'function') {
+    return foundry.utils.equals(x, y);
+  }
+
+  // Otherwise fall back to the old objectsEqual
+  if (typeof foundry.utils.objectsEqual === 'function') {
+    return foundry.utils.objectsEqual(x, y);
+  }
+
+  return x === y;
+}
 // GRAPHICAL UTILS
 
 // design was originally scaled around 140px

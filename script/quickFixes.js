@@ -8,6 +8,8 @@ export const init = () => {
 
 // delete when fixed in base foundry!!
 function minionHealthbarFix() {
+  if (game.version < 14) return;
+
   function getSoleMinionGroup(actor) {
     const system = actor?.system;
     const combatGroups = system?.combatGroups;

@@ -2,7 +2,7 @@ import { socket } from "./socket.js";
 import { clamp, flags, mod, settings } from "./utils.js";
 
 export const init = async () => {
-  if (!await settings.get("enableDamageLog")) return;
+  if (!await settings.get("enableDamageLog") || game.version < 14) return;
 
   Hooks.on("renderChatMessageHTML", renderLogMessage);
   Hooks.on("updateActor", updateStamina);
@@ -106,6 +106,8 @@ async function updateStamina(...args) {
 }
 
 function logMinions(group, diffData, evtData) {
+  mod.log("logMinions", group, diffData, evtData);
+
   if (group?.system?.combat?.round === 0 && diffData?.system?.staminaValue === group?.system?.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value for a group
 
   const minions = group.system?.minions;
@@ -140,6 +142,7 @@ function logMinions(group, diffData, evtData) {
 }
 
 function logActors(actor, diffData, evtData) {
+  mod.log("logActors", actor, diffData, evtData);
 
   if (diffData.system?.stamina === undefined) return;
 

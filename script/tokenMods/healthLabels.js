@@ -1,5 +1,5 @@
 import { MODULE_ID } from "../const.js";
-import { mod, onAllCanvasTokens, PreciseText, settings, uiScale } from "../utils.js";
+import { mod, onAllCanvasTokens, PreciseText, settings, uiScale, compare } from "../utils.js";
 import { makeOverlaySection } from "./_token.js";
 
 export const healthLabels = makeOverlaySection({
@@ -173,7 +173,8 @@ function permCheck({ players, others } = {}) {
 function updateHealthActors(actor, diff) {
   if (diff?.system?.stamina) {
     onAllCanvasTokens((tokenObj) => {
-      if (foundry.utils.equals(tokenObj.actor, actor))
+
+      if (compare(tokenObj.actor, actor))
         draw(tokenObj);
     })
   }

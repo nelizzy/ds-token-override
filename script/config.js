@@ -180,6 +180,7 @@ const config = {
     type: Boolean,
     scope: "world",
     default: false,
+    config: game.version >= 14,
     requiresReload: true,
   },
 
@@ -189,6 +190,7 @@ const config = {
     type: Boolean,
     scope: "world",
     default: true,
+    config: game.version >= 14,
     requiresReload: true,
   },
 
@@ -197,7 +199,7 @@ const config = {
     hint: `Automatically adds per-target edges for high ground, with an alert`,
     type: Boolean,
     scope: "world",
-    default: true,
+    default: false,
     requiresReload: true,
   },
 
@@ -264,8 +266,8 @@ export const init = () => {
     if (opts.divider) return sections.add(opts, array[index + 1])
 
     game.settings.register(MODULE_ID, key, {
-      ...opts,
       config: true,
+      ...opts,
     });
   })
 }
