@@ -90,19 +90,20 @@ function rescale(tokenObj) {
   position(tokenObj);
 }
 
-function setVisibility(tokenObj, forceCb = () => false) {
+function setVisibility(tokenObj, { mockHover = false, disabled = false, user = game.user.id } = {}) {
   const container = tokenResource.safeGet(tokenObj);
   if (!container) return;
+  if (user !== game.user.id) return;
 
-  const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
-  const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
-  const isActiveNpc = tokenObj.actor?.type === "npc" && ((tokenObj.document.isOwner && tokenObj.hover) || tokenObj.controlled || tokenObj._dsResourceHudOpen);
+  const isPlayerOwned = tokenObj.document.hasPlayerOwner;
+  const isDirectlyOwned = tokenObj.document.isOwner;
+  const isActive = (tokenObj.controlled || tokenObj._dsResourceHudOpen);
+  const isHovered = tokenObj.hover || mockHover;
 
-  const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
-  const visible = shouldSee || forceCb(tokenObj);
+  const shouldSee = isPlayerOwned || (isDirectlyOwned && isHovered) || isActive;
 
-  container.visible = visible;
-  container.renderable = visible;
+  container.visible = disabled !== true && shouldSee;
+  container.renderable = disabled !== true && shouldSee;
 }
 
 function hasTrackedPath(type, diff) {
@@ -297,5 +298,5 @@ class Label {
 }
 
 function highlightAll(highlighted) {
-  onAllCanvasTokens(tokenResource.setVisibility, (tokenObj) => { return tokenObj.document.isOwner && highlighted })
+  onAllCanvasTokens(tokenResource.setVisibility, { mockHover: highlighted })
 }

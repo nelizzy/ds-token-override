@@ -9,7 +9,6 @@ Please feel more than free to fork the module and adjust it as you wish.
 ## Features
 Features that are italicized are disabled by default.
 ### Token
-- Adds a tick to stamina bar at dying & winded stages or at minion thresholds*
 - Shows numbers on healthbar on hovering token (size and permissions adjustable)*
 - Adds circular icons to actor types showing the following attributes (size adjustable)
   - **Heroes**: Recoveries, Surges, Heroic Resources
@@ -21,7 +20,7 @@ Features that are italicized are disabled by default.
 - *Modifies the combat tab to track minion counts and group colors.
 - *Adds buttons to basic `/r` rolls, allowing you to quickly damage, heal, apply temp stamina, or gain either heroic resources or malice (when clicking as a GM with no heroes selected)*
 - *Sends a message when a token's health changes, with undo available to any user that owns the token*
-- Animates minion squad healthbar changes
+- Adds marks to minions' stamina bars based on minion thresholds.
 - Adds high ground detection when targeting, with alert (credit to [ColinGreenleaf](https://github.com/ColinGreenleaf))
 - *Modifies combatant group deletion to delete all member combatants from the combat as well*
 

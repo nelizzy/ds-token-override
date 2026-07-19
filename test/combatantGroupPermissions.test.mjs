@@ -13,7 +13,7 @@ function installFoundryMocks({ isGM = false, settings = {} } = {}) {
       listeners.push({ name, fn, once: true });
       return listeners.length;
     },
-    off() {},
+    off() { },
     _listeners: listeners
   };
 
@@ -30,15 +30,15 @@ function installFoundryMocks({ isGM = false, settings = {} } = {}) {
   };
 
   globalThis.PIXI = {
-    Text: class Text {},
-    Graphics: class Graphics {},
-    Container: class Container {}
+    Text: class Text { },
+    Graphics: class Graphics { },
+    Container: class Container { }
   };
 
   globalThis.CONFIG = {
     canvasTextStyle: {},
     CombatantGroup: {
-      documentClass: class CombatantGroupDocument {}
+      documentClass: class CombatantGroupDocument { }
     }
   };
 
@@ -71,7 +71,6 @@ test("player clients redraw minion stamina without writing CombatantGroup flags"
   installFoundryMocks({
     isGM: false,
     settings: {
-      enableHealthbarTicks: false,
       enableHealthbarLabels: true,
       healthLabelPlayersMinimumPerm: 1,
       healthLabelOtherMinimumPerm: 1

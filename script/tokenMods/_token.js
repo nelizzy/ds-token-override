@@ -1,4 +1,3 @@
-import { healthbarTicks } from "./healthbarTicks.js";
 import { healthLabels } from "./healthLabels.js";
 import { tokenResource } from "./tokenResource.js";
 import { flags, onAllCanvasTokens } from "../utils.js";
@@ -6,7 +5,6 @@ import { MODULE_ID } from "../const.js";
 
 export const init = async () => {
   await tokenResource.init();
-  await healthbarTicks.init();
   await healthLabels.init();
 
   Hooks.on("drawToken", createOverlay);
@@ -19,18 +17,16 @@ export const init = async () => {
 - enableTokenResource (boolean)
 - tokenResourceSize (number)
 
-- enableHealthbarTicks (boolean)
 - healthLabelPlayersMinimumPerm (string: CONST.USER_ROLE_NAMES)
 - healthLabelOtherMinimumPerm (string: CONST.USER_ROLE_NAMES)
 - healthLabelSize (number)
 */
 
 async function anyEnabled() {
-  return (await healthbarTicks.isEnabled() || await healthLabels.isEnabled() || await tokenResource.isEnabled());
+  return (await healthLabels.isEnabled() || await tokenResource.isEnabled());
 }
 
 function createOverlay(tokenObj) {
-  healthbarTicks.create(tokenObj)
   healthLabels.create(tokenObj)
   tokenResource.create(tokenObj)
 }
@@ -57,14 +53,9 @@ async function checkFlags(tokenObj, flags) {
 
       tokenResource.position(tokenObj);
       healthLabels.rescale(tokenObj, { barSize });
-      healthbarTicks.rescale(tokenObj, { barSize });
     }
   }
 
-  if (flags.refreshVisibility) {
-    healthbarTicks.setVisibility(tokenObj);
-    // healthLabels.setVisibility(tokenObj);
-  }
 }
 
 export function makeOverlaySection({
@@ -157,12 +148,15 @@ export function makeOverlaySection({
       onAllCanvasTokens(this.create);
       hookHandler.attach();
       onEnable()
+      onAllCanvasTokens(onSetVisibility, { disabled: false, user })
     },
 
     disable(user) {
       hookHandler.detach();
       onDisable()
-      onAllCanvasTokens(onSetVisibility, false, user)
+      if (user === game.user.id) {
+        onAllCanvasTokens(onSetVisibility, { disabled: true, user })
+      }
     },
 
     destroy(tokenObj) {
@@ -181,16 +175,17 @@ export function makeOverlaySection({
     async setVisibility(tokenObj, ...args) {
       if (!(await isEnabled())) return;
 
+      // expects an object { user, mockHover, disabled }
       onSetVisibility(tokenObj, ...args);
     }
   };
 }
 
 /* ------------------------------ SHARED HOOKS ------------------------------ */
-// woulod be used for healthLabels and healthbarTicks, so brought out here
+// would be used for healthLabels, so brought out here
 
 async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
-  if (!(await healthbarTicks.isEnabled() || await healthLabels.isEnabled())) return;
+  if (!(await healthLabels.isEnabled())) return;
 
   const grpFlags = flags(combatantGroup);
   const lastStamina = await grpFlags.get("lastStamina") ?? {};
@@ -201,16 +196,6 @@ async function trackHealthMinions(combatantGroup, changed, options, evtUserId) {
   const { staminaMax, staminaValue } = combatantGroup.system;
   const staminaMaxChanged = lastStamina.staminaMax !== staminaMax;
   const staminaValueChanged = lastStamina.staminaValue !== staminaValue;
-
-  // healthbarTicks
-  if (lastStamina.staminaMax !== staminaMax) {
-    minions.forEach(minion => {
-      const tokenObj = minion.token?.object;
-      if (!tokenObj) return;
-
-      healthbarTicks.draw(tokenObj, { setCount: combatantGroup.system.minions.size })
-    })
-  }
 
   // healthLabels
   if (lastStamina.staminaMax !== staminaMax || lastStamina.staminaValue !== staminaValue) {

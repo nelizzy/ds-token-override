@@ -1,5 +1,4 @@
 import { MODULE_ID } from "./const.js";
-import { healthbarTicks } from "./tokenMods/healthbarTicks.js";
 import { healthLabels } from "./tokenMods/healthLabels.js";
 import { tokenResource } from "./tokenMods/tokenResource.js";
 import { onAllCanvasTokens } from "./utils.js";
@@ -37,38 +36,6 @@ const config = {
     },
     onChange: (val) => {
       onAllCanvasTokens(tokenResource.rescale)
-    },
-  },
-
-  _HEALTHTICKS: {
-    label: "Healthbar Ticks",
-    divider: 2
-  },
-
-  enableHealthbarTicks: {
-    name: "Show Healthbar Ticks",
-    type: Boolean,
-    scope: "user",
-    default: true,
-    onChange: function (enabled, data, user) {
-      if (enabled) {
-        healthbarTicks.enable(user);
-      } else {
-        healthbarTicks.disable(user);
-      }
-    },
-  },
-
-  tickColor: {
-    name: "Set Tick Color",
-    type: new foundry.data.fields.ColorField({
-      nullable: false,
-      required: true,
-    }),
-    scope: "user",
-    default: "#000",
-    onChange: (color) => {
-      onAllCanvasTokens(healthbarTicks.draw, { color })
     },
   },
 
@@ -185,8 +152,8 @@ const config = {
   },
 
   minionHealthbars: {
-    name: "Fix Minion Healthbars",
-    hint: `Smoothly animates minion squad healthbars when updating health (will be removed when implemented by system)`,
+    name: "Squad Threshold Marks",
+    hint: `Adds a mark to the healthbar of minions for each minion in a combat group.`,
     type: Boolean,
     scope: "world",
     default: true,
@@ -196,7 +163,7 @@ const config = {
 
   highGroundAutomation: {
     name: "Automate High Ground Edges",
-    hint: `Automatically adds per-target edges for high ground, with an alert`,
+    hint: `Automatically adds per-target edges for high ground, with an alert.`,
     type: Boolean,
     scope: "world",
     default: false,
@@ -205,7 +172,7 @@ const config = {
 
   combatGroupDeletion: {
     name: "Combat Group Deletion+",
-    hint: `Deleting combat groups from a combat now also removes all combatants from combat instead of popping them out to be a solo fighter`,
+    hint: `Deleting combat groups from a combat now also removes all combatants from combat instead of popping them out to be a solo fighter.`,
     type: Boolean,
     scope: "world",
     default: false,
