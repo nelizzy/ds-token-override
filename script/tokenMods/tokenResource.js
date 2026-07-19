@@ -12,6 +12,7 @@ export const tokenResource = makeOverlaySection({
   // onDestroy: destroy,
   onSetVisibility: setVisibility,
   hooks: [
+    ["highlightObjects", highlightAll],
     ["updateActor", onUpdate],
     ["hoverToken", (token) => setVisibility(token)],
     ["controlToken", (token) => setVisibility(token)],
@@ -28,6 +29,8 @@ function create(tokenObj) {
   const data = ATTRIBUTES[tokenObj.actor.type];
   if (!data) return;
 
+  // if already been made, skip!
+  if (tokenResource.safeGet(tokenObj)) return;
 
   const container = new PIXI.Container();
   container.name = tokenResource.name;
@@ -41,6 +44,10 @@ function create(tokenObj) {
     container._dsResource.add(resource);
     container.addChild(resource.circle);
   })
+
+  // handle default bar2 being set to heroic resources while this is active
+  const bar2 = tokenObj?.document?.bar2?.attribute;
+  if (bar2) tokenObj.document.bar2.attribute = bar2 === "hero.primary.value" ? null : bar2;
 }
 
 function draw(tokenObj) {
@@ -83,16 +90,16 @@ function rescale(tokenObj) {
   position(tokenObj);
 }
 
-function setVisibility(tokenObj, force, user) {
+function setVisibility(tokenObj, forceCb = () => false) {
   const container = tokenResource.safeGet(tokenObj);
   if (!container) return;
 
-  const forceVisibilityFor = user === undefined || user === game.user.id ? force : undefined;
   const isPlayerOwned = tokenObj.document.hasPlayerOwner && tokenObj.actor?.type !== "npc";
   const isDirectlyOwned = tokenObj.document.isOwner && tokenObj.actor?.type !== "npc";
-  const isActiveNpc = tokenObj.actor?.type === "npc" && (tokenObj.hover || tokenObj.controlled || tokenObj._dsResourceHudOpen);
+  const isActiveNpc = tokenObj.actor?.type === "npc" && ((tokenObj.document.isOwner && tokenObj.hover) || tokenObj.controlled || tokenObj._dsResourceHudOpen);
+
   const shouldSee = isPlayerOwned || isDirectlyOwned || isActiveNpc;
-  const visible = forceVisibilityFor ?? shouldSee;
+  const visible = shouldSee || forceCb(tokenObj);
 
   container.visible = visible;
   container.renderable = visible;
@@ -140,6 +147,7 @@ function onRenderHUD(app, el, data, opts) {
     tokenObj._dsResourceHudOpen = false;
     tokenResource.setVisibility(tokenObj);
   });
+
 
   bar.insertAdjacentElement("afterBegin", hud);
 }
@@ -286,4 +294,8 @@ class Label {
   set text(text) {
     this.item.text = text;
   }
+}
+
+function highlightAll(highlighted) {
+  onAllCanvasTokens(tokenResource.setVisibility, (tokenObj) => { return tokenObj.document.isOwner && highlighted })
 }
