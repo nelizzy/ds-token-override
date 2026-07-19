@@ -93,6 +93,7 @@ function create(tokenObj) {
 
 function draw(tokenObj, { staminaMax, staminaValue } = {}) {
   const actor = tokenObj.actor;
+  if (!actor) return;
   if (actor.isMinion && actor.system.combatGroup) {
     const x = actor.system.combatGroup.system;
     staminaMax ??= x.staminaMax;

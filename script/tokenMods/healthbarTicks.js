@@ -12,11 +12,13 @@ export const healthbarTicks = makeOverlaySection({
 /* ----------------------------- GENERIC HANDLER ---------------------------- */
 
 function create(tokenObj) {
+  const actor = tokenObj.actor;
+  if (!actor) return;
+
   const ticks = new PIXI.Graphics();
   ticks.name = healthbarTicks.name;
   tokenObj.bars.addChild(ticks);
 
-  const actor = tokenObj.actor;
   let count = 2;
   if (["hero", "retainer"].includes(actor.type)) count = 3;
   if (actor.isMinion) count = actor?.system?.combatGroup?.system?.minions?.size ?? 0;
@@ -25,6 +27,9 @@ function create(tokenObj) {
 };
 
 function draw(tokenObj, { barSize, setCount, color = settings.get("tickColor") } = {}) {
+  const actor = tokenObj.actor;
+  if (!actor) return;
+
   const ticks = tokenObj.bars.getChildByName(healthbarTicks.name);
   barSize ??= tokenObj.bars.bar1.getLocalBounds();
 
@@ -49,6 +54,9 @@ function draw(tokenObj, { barSize, setCount, color = settings.get("tickColor") }
 };
 
 function visibility(tokenObj, force, user) {
+  const actor = tokenObj.actor;
+  if (!actor) return;
+
   const ticks = healthbarTicks.safeGet(tokenObj);
   const bar = tokenObj.bars.bar1;
   const forceVisibilityFor = user === game.user.id ? force : undefined;
@@ -68,6 +76,8 @@ function drawTick(ticks, x, y, height) {
 }
 
 function getSpacing(actor) {
+  if (!actor) return [0, 0, 0, 0];
+
   const { winded, max, min } = actor.system.stamina;
   const offset = Math.abs(min);
   return [min, 0, winded, max].map(x => (x + offset) / (offset + max))

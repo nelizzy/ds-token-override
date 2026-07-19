@@ -28,6 +28,7 @@ function create(tokenObj) {
   const data = ATTRIBUTES[tokenObj.actor.type];
   if (!data) return;
 
+
   const container = new PIXI.Container();
   container.name = tokenResource.name;
   container.zIndex = Infinity;
