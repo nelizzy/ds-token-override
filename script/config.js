@@ -147,7 +147,6 @@ const config = {
     type: Boolean,
     scope: "world",
     default: false,
-    config: game.version >= 14,
     requiresReload: true,
   },
 
@@ -157,7 +156,6 @@ const config = {
     type: Boolean,
     scope: "world",
     default: true,
-    config: game.version >= 14,
     requiresReload: true,
   },
 
