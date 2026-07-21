@@ -106,8 +106,6 @@ async function updateStamina(...args) {
 }
 
 function logMinions(group, diffData, evtData) {
-  mod.log("logMinions", group, diffData, evtData);
-
   if (group?.system?.combat?.round === 0 && diffData?.system?.staminaValue === group?.system?.staminaMax) return; // don't log pre-combat HP changes that set the initial HP value for a group
 
   const minions = group.system?.minions;
@@ -142,8 +140,6 @@ function logMinions(group, diffData, evtData) {
 }
 
 function logActors(actor, diffData, evtData) {
-  mod.log("logActors", actor, diffData, evtData);
-
   if (diffData.system?.stamina === undefined) return;
 
   const postData = diffData.system.stamina;
