@@ -12,8 +12,9 @@ export const init = () => {
       })
     } else {
       // libwrapper is not present, override the function directly
+      const og = CONFIG.Token.objectClass.prototype._drawBar;
       CONFIG.Token.objectClass.prototype._drawBar = function (index, bar, data) {
-        const og = CONFIG.Token.objectClass.prototype._drawBar.call(this, index, bar, data);
+        og.call(this, index, bar, data);
         minionHealthbarFix.call(this, index, bar, data);
       }
     }
